@@ -1,0 +1,55 @@
+:root{
+  --bg:#0b1020;
+  --panel:#121a33;
+  --line:rgba(255,255,255,.08);
+  --text:#ffffff;
+  --muted:rgba(255,255,255,.6);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* Header（頂部） */
+.header{ padding:16px; border-bottom:1px solid var(--line); }
+.header-bar{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.title{ font-weight:900; font-size:18px; }
+.player-info{ display:flex; gap:12px; font-size:13px; color:var(--muted); }
+
+/* Tabs（分頁） */
+.tabs{ display:flex; gap:8px; margin-top:10px; overflow:auto; }
+.tab{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  font-size:12px;
+  cursor:pointer;
+  color:var(--muted);
+  white-space:nowrap;
+  user-select:none;
+}
+.tab.active{
+  color:white;
+  border-color:white;
+}
+
+/* 娛樂子分類（只有娛樂顯示） */
+.subtabs{ display:none; margin-top:8px; }
+.subtabs.show{ display:flex; }
+
+/* 遊戲卡片 */
+.content{ padding:12px; }
+.grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.game{
+  background:var(--panel);
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  cursor:pointer;
+}
+.cover{ aspect-ratio:1/1; background:#1e2b5a; background-size:cover; background-position:center; }
+.name{ padding:8px; font-size:13px; font-weight:700; }
+.meta{ padding:0 8px 10px; font-size:11px; color:var(--muted); }

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Looty Game</title>
+  <style>
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      background:#0b1020;
+      color:#fff;
+    }
+
+    .loader{
+      padding:16px;
+      font-size:16px;
+      font-weight:700;
+    }
+
+    .error{
+      padding:16px;
+      font-size:16px;
+      color:#fff;
+    }
+
+    #game{
+      width:100%;
+    }
+
+    iframe{
+      display:block;
+      width:100%;
+      height:100vh;
+      border:0;
+      background:#fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loading" class="loader">Loading Game...</div>
+  <div id="game"></div>
+
+  <script type="module">
+    import { supabase } from "/src/lib/supabaseClient.js"
+    import { isGameEnabled } from "/src/config/enabled-games.js"
+
+    const params = new URLSearchParams(location.search)
+    const slug = params.get("slug")
+
+    function showError(message){
+      document.body.innerHTML = `<div class="error">${message}</div>`
+    }
+
+    if (!slug) {
+      showError("missing slug")
+      throw new Error("missing slug")
+    }
+
+    if (!isGameEnabled(slug)) {
+      showError("game not found")
+      throw new Error("game not enabled")
+    }
+
+    const { data, error } = await supabase
+      .from("public_games_v1")
+      .select("id, slug, name")
+      .eq("slug", slug)
+      .maybeSingle()
+
+    if (error) {
+      showError("game load error")
+      throw error
+    }
+
+    if (!data) {
+      showError("game not found")
+      throw new Error("game not found")
+    }
+
+    const gameUrl = `/game/${slug}/index.html`
+
+    const iframe = document.createElement("iframe")
+    iframe.src = gameUrl
+
+    iframe.onload = () => {
+      const loadingEl = document.getElementById("loading")
+      if (loadingEl) loadingEl.remove()
+    }
+
+    document.getElementById("game").appendChild(iframe)
+  </script>
+</body>
+</html>
