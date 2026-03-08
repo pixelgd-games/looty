@@ -1,5 +1,6 @@
 export const ENABLED_GAMES = {
   "demo-slot": true,
+  "lord-of-gomoku": true,
 }
 
 export function isGameEnabled(slug) {

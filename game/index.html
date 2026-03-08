@@ -45,6 +45,7 @@
   <script type="module">
     import { supabase } from "/src/lib/supabaseClient.js"
     import { isGameEnabled } from "/src/config/enabled-games.js"
+    import { getGameUrl } from "/src/config/game-urls.js"
 
     const params = new URLSearchParams(location.search)
     const slug = params.get("slug")
@@ -79,7 +80,12 @@
       throw new Error("game not found")
     }
 
-    const gameUrl = `/game/${slug}/index.html`
+    const gameUrl = getGameUrl(slug)
+
+    if (!gameUrl) {
+      showError("game url not configured")
+      throw new Error("game url not configured")
+    }
 
     const iframe = document.createElement("iframe")
     iframe.src = gameUrl
