@@ -1,5 +1,4 @@
 import { supabase } from "/src/lib/supabaseClient.js"
-import { getEnabledGameSlugs } from "/src/config/enabled-games.js"
 
 export const CASINO_TYPES = ["slot", "fish", "card", "arcade"]
 
@@ -13,17 +12,16 @@ let gamesCache = []
 export async function fetchGames() {
   const { data, error } = await supabase
     .from("public_games_v1")
-    .select("id, slug, name, type, supports_live, thumbnail, created_at")
+    .select("id, slug, name, type, supports_live, thumbnail, created_at, sort_order")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false })
 
   if (error) {
     console.error(error)
     return []
   }
 
-  const list = data || []
-  const enabledSlugs = getEnabledGameSlugs()
-
-  return list.filter((g) => enabledSlugs.includes(g.slug))
+  return data || []
 }
 
 export function getFilteredGames(list) {
@@ -67,6 +65,16 @@ export function renderGrid() {
   grid.innerHTML = ""
 
   const list = getFilteredGames(gamesCache)
+
+  if (list.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-title">No games available right now.</div>
+        <div class="empty-copy">Publish a game with a launch URL in Supabase to show it here.</div>
+      </div>
+    `
+    return
+  }
 
   list.forEach((g) => {
     const el = document.createElement("div")

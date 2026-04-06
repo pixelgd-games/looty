@@ -44,8 +44,6 @@
 
   <script type="module">
     import { supabase } from "/src/lib/supabaseClient.js"
-    import { isGameEnabled } from "/src/config/enabled-games.js"
-    import { getGameUrl } from "/src/config/game-urls.js"
 
     const params = new URLSearchParams(location.search)
     const slug = params.get("slug")
@@ -59,14 +57,9 @@
       throw new Error("missing slug")
     }
 
-    if (!isGameEnabled(slug)) {
-      showError("game not found")
-      throw new Error("game not enabled")
-    }
-
     const { data, error } = await supabase
       .from("public_games_v1")
-      .select("id, slug, name")
+      .select("id, slug, name, launch_url")
       .eq("slug", slug)
       .maybeSingle()
 
@@ -80,7 +73,7 @@
       throw new Error("game not found")
     }
 
-    const gameUrl = getGameUrl(slug)
+    const gameUrl = data.launch_url?.trim()
 
     if (!gameUrl) {
       showError("game url not configured")
@@ -89,6 +82,7 @@
 
     const iframe = document.createElement("iframe")
     iframe.src = gameUrl
+    iframe.title = data.name || "Looty Game"
 
     iframe.onload = () => {
       const loadingEl = document.getElementById("loading")
