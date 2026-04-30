@@ -18,7 +18,8 @@ async function main() {
 
   const { data, error } = await supabase
     .from("games")
-    .select("id,name,slug,thumbnail,type,supports_live,published,created_at")
+    .select("id,name,slug,thumbnail,type,supports_live,published,launch_url,sort_order,created_at")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -50,6 +51,8 @@ async function main() {
         <th>類型</th>
         <th>直播</th>
         <th>上架</th>
+        <th>排序</th>
+        <th>launch url</th>
         <th>建立時間</th>
         <th>操作</th>
       </tr>
@@ -63,8 +66,9 @@ async function main() {
     const tr = document.createElement("tr");
 
     const editUrl = `/admin/games/edit/?id=${encodeURIComponent(g.id)}`;
-    const playUrl = `/game?slug=${encodeURIComponent(g.slug)}`;
-    const staticUrl = `/public/game/${encodeURIComponent(g.slug)}/index.html`;
+    const loaderUrl = `/game/?slug=${encodeURIComponent(g.slug)}`;
+    const staticUrl = `/game/${encodeURIComponent(g.slug)}/index.html`;
+    const launchUrl = (g.launch_url || "").trim();
 
     tr.innerHTML = `
       <td>${escapeHtml(g.name || "")}</td>
@@ -77,13 +81,25 @@ async function main() {
       <td>${escapeHtml(g.type || "")}</td>
       <td>${g.supports_live ? "✅" : "❌"}</td>
       <td>${g.published ? "✅" : "❌"}</td>
+      <td>${g.sort_order ?? ""}</td>
+      <td>${
+        launchUrl
+          ? `<a href="${escapeHtml(launchUrl)}" target="_blank" rel="noopener">${escapeHtml(launchUrl)}</a>`
+          : ""
+      }</td>
       <td>${escapeHtml(g.created_at || "")}</td>
       <td>
         <a href="${editUrl}">編輯</a>
         &nbsp;|&nbsp;
-        <a href="${playUrl}" target="_blank" rel="noopener">Lobby</a>
+        <a href="${loaderUrl}" target="_blank" rel="noopener">Loader</a>
         &nbsp;|&nbsp;
         <a href="${staticUrl}" target="_blank" rel="noopener">靜態</a>
+        ${
+          launchUrl
+            ? `&nbsp;|&nbsp;
+        <a href="${escapeHtml(launchUrl)}" target="_blank" rel="noopener">啟動</a>`
+            : ""
+        }
         &nbsp;|&nbsp;
         <button data-del="${g.id}">刪除</button>
       </td>

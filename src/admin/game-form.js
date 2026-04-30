@@ -1,5 +1,6 @@
 // src/admin/game-form.js
 import { supabase } from "../lib/supabaseClient.js";
+import "./auth.js";
 
 const form = document.getElementById("gameForm");
 const params = new URLSearchParams(window.location.search);
@@ -22,10 +23,21 @@ function checked(id) {
   return !!document.getElementById(id)?.checked;
 }
 
+function parseSortOrder(rawValue) {
+  const value = String(rawValue || "").trim();
+
+  if (!value) return { ok: true, value: null };
+  if (!/^-?\d+$/.test(value)) {
+    return { ok: false, msg: "sort order 只能填整數" };
+  }
+
+  return { ok: true, value: Number(value) };
+}
+
 async function loadGame() {
   const { data, error } = await supabase
     .from("games")
-    .select("id,name,slug,thumbnail,type,supports_live,published")
+    .select("id,name,slug,thumbnail,type,supports_live,published,launch_url,sort_order")
     .eq("id", gameId)
     .maybeSingle();
 
@@ -45,19 +57,22 @@ async function loadGame() {
   document.getElementById("type").value = data.type ?? "slot";
   document.getElementById("supports_live").checked = !!data.supports_live;
   document.getElementById("published").checked = !!data.published;
+  document.getElementById("launch_url").value = data.launch_url ?? "";
+  document.getElementById("sort_order").value = data.sort_order ?? "";
 
   const loading = document.getElementById("loading");
   if (loading) loading.style.display = "none";
 }
 
-if (gameId) loadGame();
-
-form.addEventListener("submit", async (e) => {
+async function submitForm(e) {
   e.preventDefault();
 
   const name = val("name").trim();
   const slugCheck = slugSanity(val("slug"));
   if (!slugCheck.ok) return alert(slugCheck.msg);
+  const sortOrderCheck = parseSortOrder(val("sort_order"));
+  if (!sortOrderCheck.ok) return alert(sortOrderCheck.msg);
+  const launchUrl = val("launch_url").trim();
 
   const payload = {
     name,
@@ -66,9 +81,14 @@ form.addEventListener("submit", async (e) => {
     type: val("type"),
     supports_live: checked("supports_live"),
     published: checked("published"),
+    launch_url: launchUrl || null,
+    sort_order: sortOrderCheck.value,
   };
 
   if (!payload.name) return alert("名稱不能為空");
+  if (payload.published && !launchUrl) {
+    return alert("已上架遊戲需要 launch url");
+  }
 
   // 防止連點
   const submitBtn = form.querySelector('button[type="submit"]');
@@ -88,4 +108,20 @@ form.addEventListener("submit", async (e) => {
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
-});
+}
+
+async function initFormPage() {
+  const ok = await window.LootyAdminAuth.requireAdmin();
+  if (!ok) return;
+
+  if (gameId) {
+    await loadGame();
+  } else {
+    const loading = document.getElementById("loading");
+    if (loading) loading.style.display = "none";
+  }
+
+  form.addEventListener("submit", submitForm);
+}
+
+initFormPage();
