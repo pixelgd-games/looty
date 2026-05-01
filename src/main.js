@@ -1,7 +1,4 @@
 import "./styles/lobby.css"
-import { renderLobby } from "./pages/lobby/lobby.js"
-import { bindLobbyEvents, initLobbyGames } from "./pages/lobby/grid.js"
+import { initLobbyPage } from "./pages/lobby/index.js"
 
-document.querySelector("#app").innerHTML = renderLobby()
-bindLobbyEvents()
-initLobbyGames()
+initLobbyPage(document.querySelector("#app"))

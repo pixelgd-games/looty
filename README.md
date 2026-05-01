@@ -19,6 +19,24 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 - 專案輸出為靜態站，部署方式是 `npm run build` 後上傳 `dist`
 - `npm run build` 已於 2026-05-01 再次驗證成功
 
+## 最新前台改版前提
+
+以下是目前已確認、接下來前台改版應遵守的產品與技術前提：
+
+- Looty 是 H5 遊戲平台 / Lobby，不是單一遊戲官網
+- 前台公開遊戲列表應優先讀取 `public_games_v1`
+- 不改 Supabase schema
+- 不改 Cloudflare Pages 靜態部署架構
+- 不改成 React / Vue / Next.js
+- 維持 Vanilla JS + Vite + Supabase client
+
+目前前台的 UI 方向是：
+
+- 遊戲數量還不多時，暫時不顯示分類 tabs
+- 直接顯示 `public_games_v1` 回傳的全部公開可玩遊戲
+- 後端仍保留 `type`、`supports_live`、`published`、`launch_url`、`sort_order`
+- 等遊戲數量增加後，再考慮打開分類 UI
+
 ## 技術棧
 
 - Frontend: Vanilla JS + Vite
@@ -28,6 +46,8 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 ## 路由
 
 - Lobby: `/`
+- Login: `/login/`
+- Register: `/register/`
 - Game Loader: `/game/?slug=<slug>`
 - Admin Login: `/admin/login/`
 - Admin Games: `/admin/games/`
@@ -38,7 +58,24 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 
 ### Lobby
 
-Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，實際的資料查詢與篩選在 [src/pages/lobby/grid.js](/D:/Studio/Project_Code/looty/src/pages/lobby/grid.js)。
+Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首頁流程目前拆成以下模組：
+
+- [src/pages/lobby/index.js](/D:/Studio/Project_Code/looty/src/pages/lobby/index.js): 串起首頁初始化流程
+- [src/pages/lobby/lobby.js](/D:/Studio/Project_Code/looty/src/pages/lobby/lobby.js): 輸出 Lobby HTML 結構
+- [src/pages/lobby/data.js](/D:/Studio/Project_Code/looty/src/pages/lobby/data.js): 讀取 `public_games_v1`
+- [src/pages/lobby/hero.js](/D:/Studio/Project_Code/looty/src/pages/lobby/hero.js): 設定首頁主視覺
+- [src/pages/lobby/game-grid.js](/D:/Studio/Project_Code/looty/src/pages/lobby/game-grid.js): 渲染遊戲卡片與 empty state
+- [src/pages/lobby/dom.js](/D:/Studio/Project_Code/looty/src/pages/lobby/dom.js): 集中 DOM 取得
+- [src/pages/lobby/utils.js](/D:/Studio/Project_Code/looty/src/pages/lobby/utils.js): 共用小工具
+
+目前前台首頁已改成：
+
+- 不顯示分類 tabs
+- 不做前端分類分頁
+- 直接顯示全部公開遊戲
+- 主視覺使用固定 banner 圖
+- Top bar 的 `登入 / 註冊` 已連到獨立會員頁
+- 會員登入 / 註冊頁面目前先完成 UI 與路由，尚未接 Supabase auth
 
 目前會從 `public_games_v1` 讀取：
 
@@ -51,12 +88,8 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，實�
 - `created_at`
 - `sort_order`
 
-畫面上的分類規則目前是：
-
-- `games` -> `type === "casual"`
-- `casino` -> `slot / fish / card / arcade`
-- `premium` -> `type === "adult"`
-- `live` -> `supports_live === true`
+目前 `type` / `supports_live` 仍然保留在資料與卡片資訊中，
+但不再作為首頁的分頁切換 UI。
 
 ### Game Loader
 
@@ -135,15 +168,56 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，實�
 - 只有公開遊戲會出現在 Lobby / Loader 查詢結果中
 - `launch_url` 必須可用，遊戲才真正能啟動
 
+目前已確認的 view definition 概念如下：
+
+```sql
+SELECT
+  id,
+  slug,
+  name,
+  type,
+  supports_live,
+  thumbnail,
+  created_at,
+  launch_url,
+  sort_order
+FROM games
+WHERE
+  published = true
+  AND launch_url IS NOT NULL
+  AND btrim(launch_url) <> ''
+ORDER BY sort_order, created_at DESC;
+```
+
+因此前台讀 `public_games_v1` 時，應把資料視為：
+
+- 已公開
+- 可顯示
+- 可啟動
+
+前台不需要再自己判斷 `published`，因為 `public_games_v1` 本身沒有這個欄位。
+
 ## 專案結構
 
 - [index.html](/D:/Studio/Project_Code/looty/index.html): Lobby 入口
 - [game/index.html](/D:/Studio/Project_Code/looty/game/index.html): Game Loader
+- [login/index.html](/D:/Studio/Project_Code/looty/login/index.html): 前台會員登入頁
+- [register/index.html](/D:/Studio/Project_Code/looty/register/index.html): 前台會員註冊頁
 - [admin/login/index.html](/D:/Studio/Project_Code/looty/admin/login/index.html): Admin 登入頁
 - [admin/games/index.html](/D:/Studio/Project_Code/looty/admin/games/index.html): Admin 遊戲列表
 - [admin/games/new/index.html](/D:/Studio/Project_Code/looty/admin/games/new/index.html): 新增遊戲頁
 - [admin/games/edit/index.html](/D:/Studio/Project_Code/looty/admin/games/edit/index.html): 編輯遊戲頁
+- [src/auth/page.js](/D:/Studio/Project_Code/looty/src/auth/page.js): 前台會員頁共用 UI 與表單骨架
+- [src/auth/login.js](/D:/Studio/Project_Code/looty/src/auth/login.js): 登入頁入口
+- [src/auth/register.js](/D:/Studio/Project_Code/looty/src/auth/register.js): 註冊頁入口
 - [src/lib/supabaseClient.js](/D:/Studio/Project_Code/looty/src/lib/supabaseClient.js): 唯一 Supabase client
+- [public/hero/looty-hero-main.webp](/D:/Studio/Project_Code/looty/public/hero/looty-hero-main.webp): 首頁主視覺圖
+- [src/pages/lobby/index.js](/D:/Studio/Project_Code/looty/src/pages/lobby/index.js): Lobby 初始化入口
+- [src/pages/lobby/data.js](/D:/Studio/Project_Code/looty/src/pages/lobby/data.js): Lobby 資料層
+- [src/pages/lobby/game-grid.js](/D:/Studio/Project_Code/looty/src/pages/lobby/game-grid.js): Lobby 卡片渲染
+- [src/pages/lobby/hero.js](/D:/Studio/Project_Code/looty/src/pages/lobby/hero.js): Lobby 主視覺設定
+- [src/styles/theme.css](/D:/Studio/Project_Code/looty/src/styles/theme.css): 前台共用色票與 top bar 樣式
+- [src/styles/auth.css](/D:/Studio/Project_Code/looty/src/styles/auth.css): 會員登入 / 註冊頁樣式
 - [src/styles/lobby.css](/D:/Studio/Project_Code/looty/src/styles/lobby.css): Lobby 樣式
 
 ## 環境變數
@@ -196,6 +270,7 @@ npm run build
 - `admin_users` 目前仍以 email 白名單判斷，尚未升級為 auth user id
 - 刪除遊戲後仍使用 `location.reload()`
 - Admin UI 仍是很輕量的原始 HTML，尚未做排版優化
+- 前台會員的 `登入 / 註冊` 已有獨立頁面，但尚未接 Supabase auth 流程
 - 目前沒有 automated tests
 - Cloudflare Pages 與 GitHub 的自動部署流程尚未打通
 
@@ -203,6 +278,6 @@ npm run build
 
 1. 目前不要再假設 repo 內有 `enabled-games` 白名單。
 2. 若新增遊戲，要一起確認 `published`、`launch_url`、`sort_order` 是否正確。
-3. `premium` 分類目前對應 `type === "adult"`。
+3. `type` / `supports_live` 目前仍保留在資料模型裡，之後可以再打開分類 UI。
 4. 若要讓遊戲能從 Loader 啟動，請優先檢查 `public_games_v1` 是否有把該遊戲查出來。
 5. 若要改部署方式，先保住目前可用的靜態輸出流程。

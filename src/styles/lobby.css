@@ -1,72 +1,160 @@
-:root{
-  --bg:#0b1020;
-  --panel:#121a33;
-  --line:rgba(255,255,255,.08);
-  --text:#ffffff;
-  --muted:rgba(255,255,255,.6);
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
-  background:var(--bg);
-  color:var(--text);
+@import "./theme.css";
+
+/* Hero */
+.hero{
+  width:min(1180px,calc(100% - 32px));
+  margin:12px auto 0;
+  overflow:hidden;
+  aspect-ratio:1600/720;
+  border-radius:12px;
+  background:var(--hero-image, linear-gradient(135deg, #121612 0%, #090b0a 100%));
+  background-size:cover;
+  background-position:center;
+  box-shadow:var(--hero-shadow);
 }
 
-/* Header（頂部） */
-.header{ padding:16px; border-bottom:1px solid var(--line); }
-.header-bar{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
-.title{ font-weight:900; font-size:18px; }
-.player-info{ display:flex; gap:12px; font-size:13px; color:var(--muted); }
-
-/* Tabs（分頁） */
-.tabs{ display:flex; gap:8px; margin-top:10px; overflow:auto; }
-.tab{
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid var(--line);
+.section-kicker{
+  margin:0 0 6px;
   font-size:12px;
-  cursor:pointer;
-  color:var(--muted);
-  white-space:nowrap;
-  user-select:none;
-}
-.tab.active{
-  color:white;
-  border-color:white;
+  font-weight:700;
+  color:var(--accent);
+  letter-spacing:.08em;
+  text-shadow:0 0 18px rgba(215,255,47,.16);
 }
 
-/* 娛樂子分類（只有娛樂顯示） */
-.subtabs{ display:none; margin-top:8px; }
-.subtabs.show{ display:flex; }
+/* Lobby content */
+.content{
+  width:min(1180px,calc(100% - 32px));
+  margin:0 auto;
+  padding:28px 0 48px;
+}
 
-/* 遊戲卡片 */
-.content{ padding:12px; }
-.grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.section-head{
+  margin-bottom:18px;
+}
+
+.section-kicker{
+  margin-bottom:6px;
+}
+
+.section-title{
+  margin:0;
+  font-size:28px;
+  line-height:1.1;
+  color:#fbfcff;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+}
+
+/* Empty state */
 .empty-state{
   grid-column:1/-1;
-  padding:28px 18px;
+  padding:32px 20px;
   border:1px solid var(--line);
-  border-radius:16px;
-  background:var(--panel);
+  border-radius:8px;
+  background:linear-gradient(180deg, rgba(18,22,18,.98) 0%, rgba(10,13,10,.98) 100%);
+  box-shadow:var(--card-shadow);
   text-align:center;
 }
+
 .empty-title{
   font-size:16px;
   font-weight:800;
 }
+
 .empty-copy{
   margin-top:8px;
   color:var(--muted);
   font-size:13px;
 }
-.game{
-  background:var(--panel);
-  border-radius:12px;
+
+/* Game cards */
+.game-card{
+  display:block;
+  background:linear-gradient(180deg, rgba(18,22,18,.98) 0%, rgba(10,13,10,.98) 100%);
+  border-radius:8px;
   overflow:hidden;
   border:1px solid var(--line);
-  cursor:pointer;
+  text-decoration:none;
+  color:inherit;
+  box-shadow:var(--card-shadow);
+  transition:transform .18s ease,border-color .18s ease,background .18s ease, box-shadow .18s ease;
 }
-.cover{ aspect-ratio:1/1; background:#1e2b5a; background-size:cover; background-position:center; }
-.name{ padding:8px; font-size:13px; font-weight:700; }
-.meta{ padding:0 8px 10px; font-size:11px; color:var(--muted); }
+
+.game-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(215,255,47,.32);
+  background:linear-gradient(180deg, rgba(24,31,22,.98) 0%, rgba(14,18,13,.98) 100%);
+  box-shadow:0 18px 40px rgba(6,10,20,.36);
+}
+
+.game-card-cover{
+  aspect-ratio:4/3;
+  background:linear-gradient(180deg, #111511 0%, #0a0d0a 100%);
+  background-size:cover;
+  background-position:center;
+}
+
+.game-body{
+  min-height:132px;
+  padding:12px;
+}
+
+.game-head{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.type-chip{
+  display:inline-flex;
+  align-items:center;
+  min-height:26px;
+  padding:0 8px;
+  border-radius:999px;
+  border:1px solid rgba(215,255,47,.12);
+  background:rgba(215,255,47,.08);
+  color:rgba(247,248,252,.72);
+  font-size:11px;
+  font-weight:700;
+}
+
+.type-chip.live{
+  border-color:rgba(139,255,77,.16);
+  background:rgba(139,255,77,.12);
+  color:var(--accent-2);
+}
+
+.game-card-name{
+  margin-top:12px;
+  font-size:16px;
+  font-weight:800;
+  color:var(--text);
+}
+
+.game-card-meta{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+@media (max-width:960px){
+  .grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:640px){
+  .hero,
+  .content{
+    width:min(100% - 24px,1180px);
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+}

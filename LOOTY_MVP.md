@@ -21,6 +21,29 @@ Looty 第一階段的成功條件仍然很單純：
 - Admin 已補上 `launch_url` 與 `sort_order` 欄位
 - `npm run build` 可成功輸出多頁靜態站
 
+## 目前已確認的前台改版策略
+
+目前 Looty 前台已採用以下方向：
+
+- 前台仍然是 Lobby / 遊戲平台，不是單一活動官網
+- 公開遊戲列表優先讀 `public_games_v1`
+- 暫時不顯示分類 tabs
+- 直接顯示全部公開可玩的遊戲
+- 後端資料欄位保留，不刪 `type`、`supports_live` 等未來分類能力
+- 不改 Supabase schema
+- 不改 Cloudflare Pages 靜態部署架構
+- 不引入 React / Vue / Next.js
+
+### 目前前台 UI 狀態
+
+截至 2026-05-01，目前首頁 UI 可理解為：
+
+- Top bar 的 `登入 / 註冊` 已接到獨立會員頁
+- 會員登入 / 註冊頁目前先完成 UI 與路由，尚未接會員流程
+- Hero 已改為固定主視覺 banner
+- Lobby 直接顯示全部公開遊戲，不再顯示分類 tabs
+- 遊戲卡與整體背景已往黑色 / 黑綠漸層方向收斂
+
 ## 目前採用的 MVP 實作策略
 
 現在的 repo 採用以下做法：
@@ -29,6 +52,14 @@ Looty 第一階段的成功條件仍然很單純：
 - Lobby 與 Game Loader 都直接依賴 `public_games_v1`
 - Admin 直接對 `games` table 做 CRUD
 - Vite 只作為 build tool，不使用 React / Vue / Next.js
+
+### 關於前台分類 UI
+
+目前更合理的 MVP 表現方式是：
+
+- 直接顯示全部公開可玩的遊戲
+- 先不要用分類把少量內容切得很碎
+- 保留資料欄位，等遊戲數量變多後再重新打開分類 UI
 
 ### 關於 Admin 的定位
 
@@ -100,6 +131,27 @@ Looty 現階段應盡量避免把遊戲可見性拆成多份本地設定。
 - `launch_url`
 - `sort_order`
 
+目前已確認的 view definition 概念如下：
+
+```sql
+SELECT
+  id,
+  slug,
+  name,
+  type,
+  supports_live,
+  thumbnail,
+  created_at,
+  launch_url,
+  sort_order
+FROM games
+WHERE
+  published = true
+  AND launch_url IS NOT NULL
+  AND btrim(launch_url) <> ''
+ORDER BY sort_order, created_at DESC;
+```
+
 前端也預期：
 
 - Lobby 只會拿到公開可展示的遊戲
@@ -120,11 +172,12 @@ Looty 現階段應盡量避免把遊戲可見性拆成多份本地設定。
 
 ## 接下來最值得做的事
 
-1. 把 `admin_users` 白名單從 email 升級為 auth user id
-2. 補上 Admin UI 的基本排版與手機版可用性
-3. 刪除遊戲後改成局部更新，不再 `location.reload()`
-4. 打通 Cloudflare Pages 與 GitHub 的自動部署
-5. 視需要補上 automated tests 或最小 smoke checks
+1. 把前台會員 `登入 / 註冊` 從 UI 頁面接到 Supabase auth
+2. 把 `admin_users` 白名單從 email 升級為 auth user id
+3. 補上 Admin UI 的基本排版與手機版可用性
+4. 刪除遊戲後改成局部更新，不再 `location.reload()`
+5. 打通 Cloudflare Pages 與 GitHub 的自動部署
+6. 視需要補上 automated tests 或最小 smoke checks
 
 ## 一句話總結
 
