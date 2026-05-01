@@ -1,6 +1,19 @@
+const HORIZONTAL_BEAMS = [
+  { tone: "cyan", top: "16%", width: "34vw", height: "1px", duration: "17s", delay: "-4.2s", opacity: ".28" },
+  { tone: "blue", top: "24%", width: "48vw", height: "2px", duration: "13.5s", delay: "-8.1s", opacity: ".42" },
+  { tone: "pink", top: "34%", width: "26vw", height: "1px", duration: "15.2s", delay: "-2.9s", opacity: ".24" },
+  { tone: "cyan", top: "43%", width: "58vw", height: "3px", duration: "12.6s", delay: "-6.4s", opacity: ".56" },
+  { tone: "blue", top: "52%", width: "42vw", height: "2px", duration: "16.8s", delay: "-10.3s", opacity: ".3" },
+  { tone: "cyan", top: "61%", width: "64vw", height: "4px", duration: "14.1s", delay: "-5.5s", opacity: ".62" },
+  { tone: "pink", top: "71%", width: "30vw", height: "1px", duration: "18.2s", delay: "-7.6s", opacity: ".22" },
+  { tone: "blue", top: "81%", width: "46vw", height: "2px", duration: "15.8s", delay: "-11.4s", opacity: ".34" },
+]
+
 export function renderLobby() {
   return `
     <div class="shell">
+      ${renderBeamField()}
+
       <header class="topbar-shell">
         <div class="topbar">
           <a class="brand-link" href="/" aria-label="Looty lobby">
@@ -46,4 +59,31 @@ export function renderLobby() {
       </section>
     </div>
   `
+}
+
+function renderBeamField() {
+  return `
+      <div class="beam-field" aria-hidden="true">
+        <div class="beam-field-sheen"></div>
+        <div class="beam-field-vignette"></div>
+        <div class="beam-field-stream">
+          ${HORIZONTAL_BEAMS.map(renderBeam).join("")}
+        </div>
+      </div>
+  `
+}
+
+function renderBeam(beam) {
+  return `<span class="beam beam-${beam.tone}" style="${buildBeamStyle(beam)}"></span>`
+}
+
+function buildBeamStyle(beam) {
+  return [
+    `--beam-top:${beam.top}`,
+    `--beam-width:${beam.width}`,
+    `--beam-height:${beam.height}`,
+    `--beam-duration:${beam.duration}`,
+    `--beam-delay:${beam.delay}`,
+    `--beam-opacity:${beam.opacity}`,
+  ].join("; ")
 }
