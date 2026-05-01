@@ -46,8 +46,7 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 ## 路由
 
 - Lobby: `/`
-- Login: `/login/`
-- Register: `/register/`
+- Member Auth: 首頁彈跳視窗
 - Game Loader: `/game/?slug=<slug>`
 - Admin Login: `/admin/login/`
 - Admin Games: `/admin/games/`
@@ -74,8 +73,8 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 - 不做前端分類分頁
 - 直接顯示全部公開遊戲
 - 主視覺使用固定 banner 圖
-- Top bar 的 `登入 / 註冊` 已連到獨立會員頁
-- 會員登入 / 註冊頁面目前先完成 UI 與路由，尚未接 Supabase auth
+- Top bar 的 `登入 / 註冊` 目前改為開啟首頁彈跳視窗
+- 會員登入 / 註冊 UI 目前共用同一組 modal 表單，尚未接 Supabase auth
 
 目前會從 `public_games_v1` 讀取：
 
@@ -201,24 +200,21 @@ ORDER BY sort_order, created_at DESC;
 
 - [index.html](/D:/Studio/Project_Code/looty/index.html): Lobby 入口
 - [game/index.html](/D:/Studio/Project_Code/looty/game/index.html): Game Loader
-- [login/index.html](/D:/Studio/Project_Code/looty/login/index.html): 前台會員登入頁
-- [register/index.html](/D:/Studio/Project_Code/looty/register/index.html): 前台會員註冊頁
 - [admin/login/index.html](/D:/Studio/Project_Code/looty/admin/login/index.html): Admin 登入頁
 - [admin/games/index.html](/D:/Studio/Project_Code/looty/admin/games/index.html): Admin 遊戲列表
 - [admin/games/new/index.html](/D:/Studio/Project_Code/looty/admin/games/new/index.html): 新增遊戲頁
 - [admin/games/edit/index.html](/D:/Studio/Project_Code/looty/admin/games/edit/index.html): 編輯遊戲頁
-- [src/auth/page.js](/D:/Studio/Project_Code/looty/src/auth/page.js): 前台會員頁共用 UI 與表單骨架
-- [src/auth/login.js](/D:/Studio/Project_Code/looty/src/auth/login.js): 登入頁入口
-- [src/auth/register.js](/D:/Studio/Project_Code/looty/src/auth/register.js): 註冊頁入口
+- [src/auth/shared.js](/D:/Studio/Project_Code/looty/src/auth/shared.js): 前台會員彈窗共用表單設定與互動
 - [src/lib/supabaseClient.js](/D:/Studio/Project_Code/looty/src/lib/supabaseClient.js): 唯一 Supabase client
 - [public/hero/looty-hero-main.webp](/D:/Studio/Project_Code/looty/public/hero/looty-hero-main.webp): 首頁主視覺圖
 - [src/pages/lobby/index.js](/D:/Studio/Project_Code/looty/src/pages/lobby/index.js): Lobby 初始化入口
+- [src/pages/lobby/auth-modal.js](/D:/Studio/Project_Code/looty/src/pages/lobby/auth-modal.js): 首頁會員彈窗互動
 - [src/pages/lobby/data.js](/D:/Studio/Project_Code/looty/src/pages/lobby/data.js): Lobby 資料層
 - [src/pages/lobby/game-grid.js](/D:/Studio/Project_Code/looty/src/pages/lobby/game-grid.js): Lobby 卡片渲染
 - [src/pages/lobby/hero.js](/D:/Studio/Project_Code/looty/src/pages/lobby/hero.js): Lobby 主視覺設定
 - [src/styles/theme.css](/D:/Studio/Project_Code/looty/src/styles/theme.css): 前台共用色票與 top bar 樣式
-- [src/styles/auth.css](/D:/Studio/Project_Code/looty/src/styles/auth.css): 會員登入 / 註冊頁樣式
-- [src/styles/lobby.css](/D:/Studio/Project_Code/looty/src/styles/lobby.css): Lobby 樣式
+- [src/styles/auth.css](/D:/Studio/Project_Code/looty/src/styles/auth.css): 會員表單共用樣式
+- [src/styles/lobby.css](/D:/Studio/Project_Code/looty/src/styles/lobby.css): Lobby 與會員彈窗樣式
 
 ## 環境變數
 
@@ -270,7 +266,7 @@ npm run build
 - `admin_users` 目前仍以 email 白名單判斷，尚未升級為 auth user id
 - 刪除遊戲後仍使用 `location.reload()`
 - Admin UI 仍是很輕量的原始 HTML，尚未做排版優化
-- 前台會員的 `登入 / 註冊` 已有獨立頁面，但尚未接 Supabase auth 流程
+- 前台會員的 `登入 / 註冊` 目前是首頁彈跳視窗，尚未接 Supabase auth 流程
 - 目前沒有 automated tests
 - Cloudflare Pages 與 GitHub 的自動部署流程尚未打通
 

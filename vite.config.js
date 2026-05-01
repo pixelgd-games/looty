@@ -6,8 +6,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
-        login: resolve(__dirname, "login/index.html"),
-        register: resolve(__dirname, "register/index.html"),
         game: resolve(__dirname, "game/index.html"),
         adminLogin: resolve(__dirname, "admin/login/index.html"),
         adminGames: resolve(__dirname, "admin/games/index.html"),

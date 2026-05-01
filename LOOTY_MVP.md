@@ -38,8 +38,8 @@ Looty 第一階段的成功條件仍然很單純：
 
 截至 2026-05-01，目前首頁 UI 可理解為：
 
-- Top bar 的 `登入 / 註冊` 已接到獨立會員頁
-- 會員登入 / 註冊頁目前先完成 UI 與路由，尚未接會員流程
+- Top bar 的 `登入 / 註冊` 目前改為開啟首頁會員彈跳視窗
+- `login` / `register` 頁面已完成 UI，尚未接會員流程
 - Hero 已改為固定主視覺 banner
 - Lobby 直接顯示全部公開遊戲，不再顯示分類 tabs
 - 遊戲卡與整體背景已往黑色 / 黑綠漸層方向收斂
@@ -172,7 +172,7 @@ ORDER BY sort_order, created_at DESC;
 
 ## 接下來最值得做的事
 
-1. 把前台會員 `登入 / 註冊` 從 UI 頁面接到 Supabase auth
+1. 把前台會員 `登入 / 註冊` 從首頁彈跳視窗接到 Supabase auth
 2. 把 `admin_users` 白名單從 email 升級為 auth user id
 3. 補上 Admin UI 的基本排版與手機版可用性
 4. 刪除遊戲後改成局部更新，不再 `location.reload()`
