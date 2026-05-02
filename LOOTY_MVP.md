@@ -21,6 +21,7 @@ Looty 第一階段的成功條件仍然很單純：
 - Admin 已補上 `launch_url` 與 `sort_order` 欄位
 - `npm run build` 可成功輸出多頁靜態站
 - Cloudflare Pages Git 自動部署已接到 `looty-git` 的 `main`
+- 前台會員登入 v1 已接上 Supabase auth 與 `ensure_my_player_v1`
 
 ## 目前已確認的前台改版策略
 
@@ -37,10 +38,10 @@ Looty 第一階段的成功條件仍然很單純：
 
 ### 目前前台 UI 狀態
 
-截至 2026-05-01，目前首頁 UI 可理解為：
+截至 2026-05-02，目前首頁 UI 可理解為：
 
 - Top bar 的 `登入 / 註冊` 目前改為開啟首頁會員彈跳視窗
-- `login` / `register` 頁面已完成 UI，尚未接會員流程
+- `login` / `register` 已接上會員初始化第一版流程
 - Hero 已改為固定主視覺 banner
 - Lobby 直接顯示全部公開遊戲，不再顯示分類 tabs
 - 遊戲卡與整體背景已往黑色 / 黑綠漸層方向收斂
@@ -61,6 +62,41 @@ Looty 第一階段的成功條件仍然很單純：
 - 直接顯示全部公開可玩的遊戲
 - 先不要用分類把少量內容切得很碎
 - 保留資料欄位，等遊戲數量變多後再重新打開分類 UI
+
+### 關於會員初始化 v1
+
+目前會員登入只完成最小閉環，不把責任攤到前端直寫資料表。
+
+目前流程是：
+
+- login 成功後呼叫 `supabase.auth.signInWithPassword()`
+- login 成功後呼叫 `supabase.rpc("ensure_my_player_v1")`
+- register 成功且有 session 時，呼叫 `supabase.rpc("ensure_my_player_v1")`
+- register 成功但沒有 session 時，顯示「請先驗證信箱後再登入」
+- login 後 top bar 會切成已登入狀態
+- logout 目前已有基礎流程
+
+目前採用 RPC 的原因是：
+
+- 前端不直接 `insert players` / `player_balances`
+- 會員初始化留在 DB 端處理，比較容易維持一致
+- 可以讓 RLS 與 `auth.uid()` 邏輯留在資料層
+
+目前會員初始化 v1 明確不包含：
+
+- guest merge
+- `auth.users` trigger
+- Worker
+- `/me` 完整會員中心
+- `displayName` 寫入 `players`
+- 餘額歷史 / 點數流水
+
+目前這一版的目標只有：
+
+- 可登入
+- 可註冊
+- 可建立或取得 `player`
+- 可建立或取得 `balance`
 
 ### 關於 Admin 的定位
 
@@ -173,7 +209,7 @@ ORDER BY sort_order, created_at DESC;
 
 ## 接下來最值得做的事
 
-1. 把前台會員 `登入 / 註冊` 從首頁彈跳視窗接到 Supabase auth
+1. 補上 `/me` 或其他會員登入後的明確落點與會員中心骨架
 2. 把 `admin_users` 白名單從 email 升級為 auth user id
 3. 補上 Admin UI 的基本排版與手機版可用性
 4. 刪除遊戲後改成局部更新，不再 `location.reload()`

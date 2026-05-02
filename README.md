@@ -14,6 +14,7 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 
 - Lobby 直接讀取 Supabase 的 `public_games_v1`
 - Game Loader 直接用 `slug` 查 `public_games_v1`，並以 `launch_url` 載入遊戲
+- 前台會員登入 v1 已接上 Supabase auth 與 `ensure_my_player_v1`
 - Admin 使用 Google OAuth + `admin_users` email 白名單
 - Admin 可管理 `name`、`slug`、`thumbnail`、`type`、`supports_live`、`published`、`launch_url`、`sort_order`
 - 專案輸出為靜態站，Cloudflare Pages 已接上 Git 自動部署
@@ -74,7 +75,7 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 - 直接顯示全部公開遊戲
 - 主視覺使用固定 banner 圖
 - Top bar 的 `登入 / 註冊` 目前改為開啟首頁彈跳視窗
-- 會員登入 / 註冊 UI 目前共用同一組 modal 表單，尚未接 Supabase auth
+- 會員登入 / 註冊目前共用同一組 modal 表單，已接上 Supabase auth v1
 
 目前會從 `public_games_v1` 讀取：
 
@@ -101,6 +102,68 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 
 目前 repo **沒有** 再使用本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。  
 公開可見性與可啟動性應以 Supabase 資料與 `public_games_v1` 的 view 定義為準。
+
+### Member Auth v1
+
+會員登入第一版目前已完成最小初始化閉環，已完成範圍是：
+
+- 前台註冊
+- 註冊後信箱驗證提示流程
+- 前台登入
+- login 成功後呼叫 `ensure_my_player_v1`
+- 自動建立或取得 `player`
+- 自動建立或取得 `player_balances`
+- 可讀到初始 `balance`
+- 登入後 top bar 顯示會員狀態
+- logout 基礎流程
+
+目前已確認的 DB 骨架包含：
+
+- `public.players`
+- `public.player_balances`
+- `player_balances.player_id -> players.id`
+- `players`、`player_balances`、`admin_users`、`access_whitelist`、`site_settings` 都已開 RLS
+
+目前採用的 RPC 是：
+
+- function name：`public.ensure_my_player_v1()`
+- 作用：登入後確保目前 `auth.uid()` 對應的 `players` 與 `player_balances` 存在
+- 回傳欄位：`player_id`、`auth_user_id`、`balance`
+- 權限：只保留 `authenticated`、`postgres`、`service_role` 可執行；`PUBLIC` / `anon` 已移除 `EXECUTE`
+
+前台登入 / 註冊流程目前是：
+
+1. login 成功後呼叫 `supabase.auth.signInWithPassword()`
+2. login 成功後呼叫 `supabase.rpc("ensure_my_player_v1")`
+3. register 成功且有 session 時，呼叫 `supabase.rpc("ensure_my_player_v1")`
+4. register 成功但沒有 session 時，不呼叫 RPC，改顯示「請先驗證信箱後再登入」
+
+目前前台不直接 `insert players` / `insert player_balances`，原因是：
+
+- 會員初始化邏輯集中在 DB RPC，比較不容易前後端分岔
+- RLS 與 `auth.uid()` 綁定可以留在資料層處理
+- 前端只需要負責 auth 與顯示，不需要知道建立 player 的細節
+
+目前也暫時不採用 `auth.users` trigger，原因是：
+
+- 第一版先完成最小可工作的閉環
+- 登入後顯式呼叫 RPC 比較容易觀察與除錯
+- 先避免把會員初始化散到 trigger 與前端兩邊
+
+目前這一版刻意不包含：
+
+- guest merge
+- `auth.users` trigger
+- Worker
+- `/me` 完整會員中心
+- `displayName` 寫入 `players`
+- 餘額歷史 / 點數流水
+
+會員登入相關前端檔案目前主要是：
+
+- [src/auth/member.js](/D:/Studio/Project_Code/looty/src/auth/member.js): 前台會員 auth 與 RPC 初始化
+- [src/auth/shared.js](/D:/Studio/Project_Code/looty/src/auth/shared.js): 會員表單 render / validate / feedback
+- [src/pages/lobby/auth-modal.js](/D:/Studio/Project_Code/looty/src/pages/lobby/auth-modal.js): 首頁 modal 與登入後狀態切換
 
 ## Admin 現況
 
@@ -204,6 +267,7 @@ ORDER BY sort_order, created_at DESC;
 - [admin/games/index.html](/D:/Studio/Project_Code/looty/admin/games/index.html): Admin 遊戲列表
 - [admin/games/new/index.html](/D:/Studio/Project_Code/looty/admin/games/new/index.html): 新增遊戲頁
 - [admin/games/edit/index.html](/D:/Studio/Project_Code/looty/admin/games/edit/index.html): 編輯遊戲頁
+- [src/auth/member.js](/D:/Studio/Project_Code/looty/src/auth/member.js): 前台會員登入 / 註冊 / RPC 初始化
 - [src/auth/shared.js](/D:/Studio/Project_Code/looty/src/auth/shared.js): 前台會員彈窗共用表單設定與互動
 - [src/lib/supabaseClient.js](/D:/Studio/Project_Code/looty/src/lib/supabaseClient.js): 唯一 Supabase client
 - [public/hero/looty-hero-main.webp](/D:/Studio/Project_Code/looty/public/hero/looty-hero-main.webp): 首頁主視覺圖
@@ -268,12 +332,42 @@ npm run build
 - 原始檔：`public/game/demo-slot/index.html`
 - 對外路徑：`/game/demo-slot/index.html`
 
+## 會員登入 v1 測試方式
+
+1. 開啟線上前台首頁，使用 `looty-git` 的登入 / 註冊 modal 進行會員登入
+2. login 成功後，確認 top bar 會切成已登入狀態，並顯示會員名稱與餘額
+3. 到 Supabase 檢查 `players` / `player_balances` 是否已建立對應資料
+4. 可使用以下 SQL 查詢最近建立的會員資料：
+
+```sql
+select
+  p.id as player_id,
+  p.auth_user_id,
+  p.guest_id,
+  p.created_at,
+  pb.balance,
+  pb.updated_at
+from public.players p
+left join public.player_balances pb
+  on pb.player_id = p.id
+order by p.created_at desc
+limit 10;
+```
+
+目前已用線上前台實測成功：
+
+- login 成功
+- `ensure_my_player_v1` 成功執行
+- DB 端已建立對應 `player` 與 `balance`
+
 ## 已知待補點
 
 - `admin_users` 目前仍以 email 白名單判斷，尚未升級為 auth user id
 - 刪除遊戲後仍使用 `location.reload()`
 - Admin UI 仍是很輕量的原始 HTML，尚未做排版優化
-- 前台會員的 `登入 / 註冊` 目前是首頁彈跳視窗，尚未接 Supabase auth 流程
+- 前台會員目前只有最小初始化閉環，尚未有 `/me` 完整會員中心
+- 前台會員目前尚未做 guest merge
+- 前台會員目前尚未改為 `auth.users` trigger 初始化
 - 目前沒有 automated tests
 
 ## 交接提醒
