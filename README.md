@@ -17,6 +17,7 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 - 前台會員登入 v1 已接上 Supabase auth 與 `ensure_my_player_v1`
 - Admin 使用 Google OAuth + `admin_users` email 白名單
 - Admin 可管理 `name`、`slug`、`thumbnail`、`type`、`supports_live`、`published`、`launch_url`、`sort_order`
+- 前台 / Loader / Admin 已開始共用錯誤視窗與錯誤代碼
 - 專案輸出為靜態站，Cloudflare Pages 已接上 Git 自動部署
 - `npm run build` 已於 2026-05-02 再次驗證成功
 
@@ -100,6 +101,13 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 3. 取出 `launch_url`
 4. 以 `iframe` 載入遊戲
 
+Loader 的預期錯誤會用共用錯誤視窗呈現，不再用 uncaught error 表達：
+
+- `LOOTY-GAME-001`: 缺少 `slug`
+- `LOOTY-GAME-002`: 找不到指定遊戲
+- `LOOTY-GAME-003`: 遊戲啟動網址未設定
+- `LOOTY-GAME-004`: 遊戲資料讀取失敗
+
 目前 repo **沒有** 再使用本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。  
 公開可見性與可啟動性應以 Supabase 資料與 `public_games_v1` 的 view 定義為準。
 
@@ -179,8 +187,8 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 - 列出 `games`
 - 顯示 `launch_url` 與 `sort_order`
 - 前往編輯頁
-- 開啟 Loader、靜態頁、實際啟動網址
-- 刪除遊戲
+- 開啟 Loader 與實際啟動網址；只有 `launch_url` 指向本地靜態遊戲時才顯示靜態頁連結
+- 刪除遊戲，成功後局部更新列表，不再整頁 reload
 
 [src/admin/game-form.js](/D:/Studio/Project_Code/looty/src/admin/game-form.js) 負責：
 
@@ -309,6 +317,39 @@ npm run build
 
 建置輸出在 `dist/`。
 
+## 最小 smoke check
+
+```bash
+npm run smoke
+```
+
+這個檢查會先跑 `npm run build`，再啟動本機 Vite 與 headless Chrome / Edge，確認：
+
+- 首頁能載入
+- Loader 缺少 `slug` 時會出現錯誤畫面與錯誤代碼
+- Admin login 能載入
+- 共用錯誤視窗能顯示錯誤代碼
+
+如果本機找不到 Chrome / Edge，可用 `SMOKE_BROWSER_PATH` 指定 Chromium browser 執行檔。
+
+## Cloudflare Access 待設定
+
+後台 `/admin/*` 之後應加上 Cloudflare Access，作為進入 Admin HTML 前的第一層保護。
+目前尚未設定，先記錄預計設定如下：
+
+- 測試 hostname：`looty-git.pages.dev`
+- 保護路徑：`/admin/*`
+- 先只保護 Admin，不保護首頁 `/`、Game Loader `/game/` 或公開遊戲頁
+- Application type：Self-hosted
+- 允許的 Google email：
+  - `pixelgd.games@gmail.com`
+  - `johnnyli1226@gmail.com`
+- 非允許帳號處理：使用 Cloudflare Access 預設拒絕頁
+- 先不要 redirect 回首頁，避免測試時混淆
+- 前端 `admin_users` 白名單檢查保留，作為第二層保護
+
+正式網域綁定後，需要再新增或調整 Access application，把正式網域的 `/admin/*` 也納入保護。
+
 目前已知部署模式：
 
 - Cloudflare Pages project：`looty-git`
@@ -363,12 +404,11 @@ limit 10;
 ## 已知待補點
 
 - `admin_users` 目前仍以 email 白名單判斷，尚未升級為 auth user id
-- 刪除遊戲後仍使用 `location.reload()`
 - Admin UI 仍是很輕量的原始 HTML，尚未做排版優化
 - 前台會員目前只有最小初始化閉環，尚未有 `/me` 完整會員中心
 - 前台會員目前尚未做 guest merge
 - 前台會員目前尚未改為 `auth.users` trigger 初始化
-- 目前沒有 automated tests
+- 目前只有最小 smoke check，尚未有完整 automated tests
 
 ## 交接提醒
 

@@ -19,7 +19,9 @@ Looty 第一階段的成功條件仍然很單純：
 - Admin Login 已可用 Google OAuth + `admin_users` 白名單
 - Admin 已可管理 `games` 的基本資料
 - Admin 已補上 `launch_url` 與 `sort_order` 欄位
+- 前台 / Loader / Admin 已開始共用錯誤視窗與錯誤代碼
 - `npm run build` 可成功輸出多頁靜態站
+- `npm run smoke` 可做最小本機 smoke check
 - Cloudflare Pages Git 自動部署已接到 `looty-git` 的 `main`
 - 前台會員登入 v1 已接上 Supabase auth 與 `ensure_my_player_v1`
 
@@ -118,6 +120,8 @@ Looty 現階段應盡量避免把遊戲可見性拆成多份本地設定。
 - `public_games_v1` 是公開讀取來源
 - `launch_url` 與 `sort_order` 已經是正式欄位，不是暫時補丁
 - repo 目前 **沒有** 使用本地 `enabled-games` 白名單
+- 預期錯誤應用共用錯誤視窗呈現，並附上 `LOOTY-*` 錯誤代碼，避免把資料讀取失敗誤判成空資料
+- 後台 `/admin/*` 之後應用 Cloudflare Access 保護；目前先規劃以 `looty-git.pages.dev/admin/*` 測試，正式網域確定後再調整
 
 ## 目前前端假設的最小資料模型
 
@@ -212,9 +216,9 @@ ORDER BY sort_order, created_at DESC;
 1. 補上 `/me` 或其他會員登入後的明確落點與會員中心骨架
 2. 把 `admin_users` 白名單從 email 升級為 auth user id
 3. 補上 Admin UI 的基本排版與手機版可用性
-4. 刪除遊戲後改成局部更新，不再 `location.reload()`
+4. 設定 Cloudflare Access 保護 `/admin/*`
 5. 確認 `looty-git` 接手正式網域與舊 Direct Upload 專案的退場策略
-6. 視需要補上 automated tests 或最小 smoke checks
+6. 視需要把目前最小 smoke check 擴充成完整 automated tests
 
 ## 一句話總結
 

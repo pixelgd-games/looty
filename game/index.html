@@ -44,52 +44,105 @@
 
   <script type="module">
     import { supabase } from "/src/lib/supabaseClient.js"
+    import { ERROR_CODES, showErrorModal } from "/src/ui/error-modal.js"
 
     const params = new URLSearchParams(location.search)
     const slug = params.get("slug")
 
-    function showError(message){
-      document.body.innerHTML = `<div class="error">${message}</div>`
+    function showError({ code, title, message, error }){
+      document.body.replaceChildren()
+
+      const errorBox = document.createElement("div")
+      errorBox.className = "error"
+
+      const heading = document.createElement("strong")
+      heading.textContent = title
+
+      const copy = document.createElement("div")
+      copy.textContent = message
+
+      const codeText = document.createElement("div")
+      codeText.style.marginTop = "8px"
+      codeText.style.opacity = ".72"
+      codeText.textContent = `錯誤代碼：${code}`
+
+      errorBox.append(heading, copy, codeText)
+      document.body.append(errorBox)
+
+      showErrorModal({
+        code,
+        title,
+        message,
+        error,
+      })
     }
 
-    if (!slug) {
-      showError("missing slug")
-      throw new Error("missing slug")
+    async function main() {
+      if (!slug) {
+        showError({
+          code: ERROR_CODES.GAME_MISSING_SLUG,
+          title: "缺少遊戲代碼",
+          message: "目前無法判斷要載入哪一款遊戲，請從遊戲列表重新進入。",
+        })
+        return
+      }
+
+      const { data, error } = await supabase
+        .from("public_games_v1")
+        .select("id, slug, name, launch_url")
+        .eq("slug", slug)
+        .maybeSingle()
+
+      if (error) {
+        showError({
+          code: ERROR_CODES.GAME_READ_FAILED,
+          title: "遊戲資料讀取失敗",
+          message: "目前無法取得遊戲資料，請稍後再試。",
+          error,
+        })
+        return
+      }
+
+      if (!data) {
+        showError({
+          code: ERROR_CODES.GAME_NOT_FOUND,
+          title: "找不到遊戲",
+          message: "找不到指定的公開遊戲，請回到遊戲列表重新選擇。",
+        })
+        return
+      }
+
+      const gameUrl = data.launch_url?.trim()
+
+      if (!gameUrl) {
+        showError({
+          code: ERROR_CODES.GAME_URL_MISSING,
+          title: "遊戲啟動網址未設定",
+          message: "這款遊戲目前缺少啟動網址，請聯絡管理員。",
+        })
+        return
+      }
+
+      const iframe = document.createElement("iframe")
+      iframe.src = gameUrl
+      iframe.title = data.name || "Looty Game"
+
+      iframe.onload = () => {
+        const loadingEl = document.getElementById("loading")
+        if (loadingEl) loadingEl.remove()
+      }
+
+      document.getElementById("game").appendChild(iframe)
     }
 
-    const { data, error } = await supabase
-      .from("public_games_v1")
-      .select("id, slug, name, launch_url")
-      .eq("slug", slug)
-      .maybeSingle()
-
-    if (error) {
-      showError("game load error")
-      throw error
-    }
-
-    if (!data) {
-      showError("game not found")
-      throw new Error("game not found")
-    }
-
-    const gameUrl = data.launch_url?.trim()
-
-    if (!gameUrl) {
-      showError("game url not configured")
-      throw new Error("game url not configured")
-    }
-
-    const iframe = document.createElement("iframe")
-    iframe.src = gameUrl
-    iframe.title = data.name || "Looty Game"
-
-    iframe.onload = () => {
-      const loadingEl = document.getElementById("loading")
-      if (loadingEl) loadingEl.remove()
-    }
-
-    document.getElementById("game").appendChild(iframe)
+    main().catch((error) => {
+      showError({
+        code: ERROR_CODES.GAME_READ_FAILED,
+        title: "遊戲載入失敗",
+        message: "目前無法載入遊戲，請稍後再試。",
+        error,
+      })
+    })
   </script>
 </body>
 </html>

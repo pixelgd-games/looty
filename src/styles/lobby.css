@@ -271,6 +271,13 @@ body.auth-modal-open{
   text-align:center;
 }
 
+.empty-state.is-error{
+  border-color:rgba(255,118,140,.24);
+  background:
+    linear-gradient(180deg, rgba(80,30,40,.16) 0%, rgba(255,255,255,0) 18%),
+    linear-gradient(180deg, var(--glass-panel) 0%, var(--glass-panel-strong) 100%);
+}
+
 .empty-title{
   font-size:16px;
   font-weight:800;
@@ -495,7 +502,42 @@ body.auth-modal-open{
   }
 
   .grid{
-    grid-template-columns:1fr;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .game-card{
+    border-radius:14px;
+  }
+
+  .game-body{
+    min-height:104px;
+    margin-top:-30px;
+    padding:10px 9px 10px;
+  }
+
+  .game-head{
+    gap:5px;
+  }
+
+  .type-chip{
+    min-height:22px;
+    padding:0 7px;
+    font-size:10px;
+  }
+
+  .game-card-name{
+    margin-top:9px;
+    font-size:13px;
+    line-height:1.25;
+    overflow-wrap:anywhere;
+  }
+
+  .game-card-meta{
+    margin-top:4px;
+    font-size:11px;
+    line-height:1.25;
+    overflow-wrap:anywhere;
   }
 }
 

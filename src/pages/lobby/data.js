@@ -10,8 +10,7 @@ export async function fetchPublicGames() {
     .order("created_at", { ascending: false })
 
   if (error) {
-    console.error(error)
-    return []
+    throw error
   }
 
   return data || []

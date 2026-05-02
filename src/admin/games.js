@@ -1,10 +1,13 @@
 // src/admin/games.js
 import { supabase } from "../lib/supabaseClient.js";
 import "./auth.js";
+import { ERROR_CODES, showErrorModal } from "../ui/error-modal.js";
 
 function $(sel) {
   return document.querySelector(sel);
 }
+
+let gameRows = [];
 
 async function main() {
   // admin 保護
@@ -24,15 +27,22 @@ async function main() {
 
   if (error) {
     $("#status").textContent = "讀取失敗：" + error.message;
+    showErrorModal({
+      code: ERROR_CODES.ADMIN_GAMES_READ_FAILED,
+      title: "後台遊戲列表讀取失敗",
+      message: "目前無法取得遊戲列表，請稍後再試。",
+      error,
+    });
     return;
   }
 
-  $("#status").textContent = `共 ${data.length} 筆遊戲`;
+  gameRows = data || [];
+  updateStatus();
 
   const list = $("#list");
   list.innerHTML = "";
 
-  if (data.length === 0) {
+  if (gameRows.length === 0) {
     list.textContent = "目前沒有遊戲。";
     return;
   }
@@ -62,13 +72,26 @@ async function main() {
 
   const tbody = table.querySelector("tbody");
 
-  for (const g of data) {
+  for (const g of gameRows) {
     const tr = document.createElement("tr");
 
     const editUrl = `/admin/games/edit/?id=${encodeURIComponent(g.id)}`;
     const loaderUrl = `/game/?slug=${encodeURIComponent(g.slug)}`;
     const staticUrl = `/game/${encodeURIComponent(g.slug)}/index.html`;
     const launchUrl = (g.launch_url || "").trim();
+    const showStaticLink = launchUrl === staticUrl;
+    const actionLinks = [
+      `<a href="${editUrl}">編輯</a>`,
+      `<a href="${loaderUrl}" target="_blank" rel="noopener">Loader</a>`,
+    ];
+
+    if (showStaticLink) {
+      actionLinks.push(`<a href="${staticUrl}" target="_blank" rel="noopener">靜態</a>`);
+    }
+
+    if (launchUrl) {
+      actionLinks.push(`<a href="${escapeHtml(launchUrl)}" target="_blank" rel="noopener">啟動</a>`);
+    }
 
     tr.innerHTML = `
       <td>${escapeHtml(g.name || "")}</td>
@@ -89,17 +112,7 @@ async function main() {
       }</td>
       <td>${escapeHtml(g.created_at || "")}</td>
       <td>
-        <a href="${editUrl}">編輯</a>
-        &nbsp;|&nbsp;
-        <a href="${loaderUrl}" target="_blank" rel="noopener">Loader</a>
-        &nbsp;|&nbsp;
-        <a href="${staticUrl}" target="_blank" rel="noopener">靜態</a>
-        ${
-          launchUrl
-            ? `&nbsp;|&nbsp;
-        <a href="${escapeHtml(launchUrl)}" target="_blank" rel="noopener">啟動</a>`
-            : ""
-        }
+        ${actionLinks.join("&nbsp;|&nbsp;")}
         &nbsp;|&nbsp;
         <button data-del="${g.id}">刪除</button>
       </td>
@@ -123,12 +136,29 @@ async function main() {
     const { error: delErr } = await supabase.from("games").delete().eq("id", id);
 
     if (delErr) {
-      alert("刪除失敗：" + delErr.message);
+      showErrorModal({
+        code: ERROR_CODES.ADMIN_DELETE_FAILED,
+        title: "刪除遊戲失敗",
+        message: "目前無法刪除這筆遊戲資料，請稍後再試。",
+        error: delErr,
+        reload: false,
+      });
       return;
     }
 
-    location.reload();
+    gameRows = gameRows.filter((game) => game.id !== id);
+    btn.closest("tr")?.remove();
+    updateStatus();
+
+    if (gameRows.length === 0) {
+      list.textContent = "目前沒有遊戲。";
+    }
   });
+}
+
+function updateStatus() {
+  const status = $("#status");
+  if (status) status.textContent = `共 ${gameRows.length} 筆遊戲`;
 }
 
 function escapeHtml(str) {

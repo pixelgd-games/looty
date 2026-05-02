@@ -1,6 +1,7 @@
 // src/admin/game-form.js
 import { supabase } from "../lib/supabaseClient.js";
 import "./auth.js";
+import { ERROR_CODES, showErrorModal } from "../ui/error-modal.js";
 
 const form = document.getElementById("gameForm");
 const params = new URLSearchParams(window.location.search);
@@ -42,12 +43,26 @@ async function loadGame() {
     .maybeSingle();
 
   if (error) {
-    alert("讀取失敗：" + error.message);
+    showFormError({
+      code: ERROR_CODES.ADMIN_GAME_READ_FAILED,
+      title: "遊戲資料讀取失敗",
+      message: "目前無法取得這筆遊戲資料，請稍後再試。",
+      error,
+    });
     return;
   }
   if (!data) {
-    alert("找不到遊戲（可能已被刪除）");
-    window.location.href = "/admin/games/";
+    showFormError({
+      code: ERROR_CODES.ADMIN_GAME_NOT_FOUND,
+      title: "找不到遊戲",
+      message: "找不到這筆遊戲資料，可能已經被刪除。",
+      primaryAction: {
+        label: "回遊戲列表",
+        onClick: () => {
+          window.location.href = "/admin/games/";
+        },
+      },
+    });
     return;
   }
 
@@ -69,9 +84,9 @@ async function submitForm(e) {
 
   const name = val("name").trim();
   const slugCheck = slugSanity(val("slug"));
-  if (!slugCheck.ok) return alert(slugCheck.msg);
+  if (!slugCheck.ok) return showValidationError(slugCheck.msg);
   const sortOrderCheck = parseSortOrder(val("sort_order"));
-  if (!sortOrderCheck.ok) return alert(sortOrderCheck.msg);
+  if (!sortOrderCheck.ok) return showValidationError(sortOrderCheck.msg);
   const launchUrl = val("launch_url").trim();
 
   const payload = {
@@ -85,9 +100,9 @@ async function submitForm(e) {
     sort_order: sortOrderCheck.value,
   };
 
-  if (!payload.name) return alert("名稱不能為空");
+  if (!payload.name) return showValidationError("名稱不能為空");
   if (payload.published && !launchUrl) {
-    return alert("已上架遊戲需要 launch url");
+    return showValidationError("已上架遊戲需要 launch url");
   }
 
   // 防止連點
@@ -97,10 +112,16 @@ async function submitForm(e) {
   try {
     if (gameId) {
       const { error } = await supabase.from("games").update(payload).eq("id", gameId);
-      if (error) return alert("更新失敗：" + error.message);
+      if (error) {
+        showSaveError("更新遊戲失敗", error);
+        return;
+      }
     } else {
       const { error } = await supabase.from("games").insert([payload]);
-      if (error) return alert("新增失敗：" + error.message);
+      if (error) {
+        showSaveError("新增遊戲失敗", error);
+        return;
+      }
     }
 
     // ✅ 導回正確的後台首頁（資料夾 index）
@@ -125,3 +146,29 @@ async function initFormPage() {
 }
 
 initFormPage();
+
+function showValidationError(message) {
+  showFormError({
+    code: ERROR_CODES.ADMIN_FORM_INVALID,
+    title: "資料格式錯誤",
+    message,
+    reload: false,
+  });
+}
+
+function showSaveError(title, error) {
+  showFormError({
+    code: ERROR_CODES.ADMIN_GAME_SAVE_FAILED,
+    title,
+    message: "目前無法儲存遊戲資料，請稍後再試。",
+    error,
+    reload: false,
+  });
+}
+
+function showFormError(options) {
+  showErrorModal({
+    reload: false,
+    ...options,
+  });
+}

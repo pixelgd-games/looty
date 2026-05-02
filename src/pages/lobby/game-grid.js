@@ -11,17 +11,35 @@ export function renderGameGrid(gridElement, games) {
   gridElement.replaceChildren(...games.map(createGameCard))
 }
 
+export function renderGameGridError(gridElement) {
+  if (!gridElement) return
+
+  gridElement.replaceChildren(createGridState({
+    className: "empty-state is-error",
+    title: "遊戲列表暫時無法顯示。",
+    copy: "請稍後重新整理頁面。",
+  }))
+}
+
 function createEmptyState() {
+  return createGridState({
+    className: "empty-state",
+    title: "目前還沒有公開遊戲。",
+    copy: "遊戲上架後會自動出現在這裡。",
+  })
+}
+
+function createGridState({ className, title: titleText, copy: copyText }) {
   const wrapper = document.createElement("div")
-  wrapper.className = "empty-state"
+  wrapper.className = className
 
   const title = document.createElement("div")
   title.className = "empty-title"
-  title.textContent = "目前還沒有公開遊戲。"
+  title.textContent = titleText
 
   const copy = document.createElement("div")
   copy.className = "empty-copy"
-  copy.textContent = "遊戲上架後會自動出現在這裡。"
+  copy.textContent = copyText
 
   wrapper.append(title, copy)
   return wrapper

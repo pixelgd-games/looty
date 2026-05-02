@@ -1,5 +1,6 @@
 import { bindAuthPanel, getAuthModeConfig, renderAuthPanel } from "../../auth/shared.js"
 import { ensureMyPlayer, getCurrentMemberSession, loginMember, registerMember, signOutMember } from "../../auth/member.js"
+import { ERROR_CODES, showErrorModal } from "../../ui/error-modal.js"
 
 export function initLobbyAuthModal(elements) {
   const {
@@ -104,9 +105,14 @@ export function initLobbyAuthModal(elements) {
       renderTopbarActions()
       closeModal()
     } catch (error) {
-      console.error(error)
       logoutButton.disabled = false
-      alert(error instanceof Error ? error.message : "登出失敗，請稍後再試。")
+      showErrorModal({
+        code: ERROR_CODES.AUTH_SIGN_OUT_FAILED,
+        title: "會員登出失敗",
+        message: "目前無法完成登出，請稍後再試。",
+        error,
+        reload: false,
+      })
     }
   }
 
@@ -169,7 +175,13 @@ export function initLobbyAuthModal(elements) {
         state.player = await ensureMyPlayer()
       }
     } catch (error) {
-      console.error(error)
+      showErrorModal({
+        code: ERROR_CODES.AUTH_MEMBER_STATE_FAILED,
+        title: "會員狀態讀取失敗",
+        message: "目前無法確認會員登入狀態，請稍後再試。",
+        error,
+        reload: false,
+      })
     }
 
     renderTopbarActions()
