@@ -156,12 +156,8 @@ export function initLobbyAuthModal(elements) {
     name.className = "topbar-member-name"
     name.textContent = getMemberName(state.session.user)
 
-    const meta = document.createElement("span")
-    meta.className = "topbar-member-meta"
-    meta.textContent = state.player ? `餘額 ${formatBalance(state.player.balance)}` : "會員已登入"
-
-    summary.append(name, meta)
-    topbarActions.replaceChildren(summary, createLogoutButton())
+    summary.append(name)
+    topbarActions.replaceChildren(summary, createBalancePill(state.player), createLogoutButton())
   }
 
   async function syncMemberState() {
@@ -212,8 +208,30 @@ function createLogoutButton() {
   return button
 }
 
+function createBalancePill(player) {
+  const pill = document.createElement("span")
+  pill.className = "topbar-balance"
+  pill.textContent = `餘額 ${player ? formatBalance(player.balance) : "--"}`
+  return pill
+}
+
 function getMemberName(user) {
-  return user.user_metadata?.display_name || user.email || "Looty 會員"
+  const metadata = user.user_metadata || {}
+  const nameCandidates = [
+    metadata.display_name,
+    metadata.displayName,
+    metadata.full_name,
+    metadata.name,
+    metadata.nickname,
+    metadata.preferred_username,
+  ]
+
+  for (const candidate of nameCandidates) {
+    const name = String(candidate || "").trim()
+    if (name) return name
+  }
+
+  return "Looty 會員"
 }
 
 function formatBalance(balance) {
