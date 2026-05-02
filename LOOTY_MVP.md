@@ -20,6 +20,7 @@ Looty 第一階段的成功條件仍然很單純：
 - Admin 已可管理 `games` 的基本資料
 - Admin 已補上 `launch_url` 與 `sort_order` 欄位
 - `npm run build` 可成功輸出多頁靜態站
+- Cloudflare Pages Git 自動部署已接到 `looty-git` 的 `main`
 
 ## 目前已確認的前台改版策略
 
@@ -176,7 +177,7 @@ ORDER BY sort_order, created_at DESC;
 2. 把 `admin_users` 白名單從 email 升級為 auth user id
 3. 補上 Admin UI 的基本排版與手機版可用性
 4. 刪除遊戲後改成局部更新，不再 `location.reload()`
-5. 打通 Cloudflare Pages 與 GitHub 的自動部署
+5. 確認 `looty-git` 接手正式網域與舊 Direct Upload 專案的退場策略
 6. 視需要補上 automated tests 或最小 smoke checks
 
 ## 一句話總結

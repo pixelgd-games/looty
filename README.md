@@ -10,14 +10,14 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 
 ## 目前狀態
 
-截至 2026-05-01，目前 repo 的實作狀態如下：
+截至 2026-05-02，目前 repo 的實作狀態如下：
 
 - Lobby 直接讀取 Supabase 的 `public_games_v1`
 - Game Loader 直接用 `slug` 查 `public_games_v1`，並以 `launch_url` 載入遊戲
 - Admin 使用 Google OAuth + `admin_users` email 白名單
 - Admin 可管理 `name`、`slug`、`thumbnail`、`type`、`supports_live`、`published`、`launch_url`、`sort_order`
-- 專案輸出為靜態站，部署方式是 `npm run build` 後上傳 `dist`
-- `npm run build` 已於 2026-05-01 再次驗證成功
+- 專案輸出為靜態站，Cloudflare Pages 已接上 Git 自動部署
+- `npm run build` 已於 2026-05-02 再次驗證成功
 
 ## 最新前台改版前提
 
@@ -247,8 +247,15 @@ npm run build
 
 目前已知部署模式：
 
-- Cloudflare Pages
-- 手動上傳整個 `dist/`
+- Cloudflare Pages project：`looty-git`
+- GitHub repo：`pixelgd-games/looty`
+- Production branch：`main`
+- Root directory：留空
+- Framework preset：`Vite`
+- Build command：`npm run build`
+- Build output directory：`dist`
+- Frontend environment variables：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
+- 舊的 Direct Upload Pages 專案先保留，不要直接覆蓋或刪除
 
 如果遊戲本體放在 `public/game/<slug>/index.html`，建置後對外路徑會是：
 
@@ -268,7 +275,6 @@ npm run build
 - Admin UI 仍是很輕量的原始 HTML，尚未做排版優化
 - 前台會員的 `登入 / 註冊` 目前是首頁彈跳視窗，尚未接 Supabase auth 流程
 - 目前沒有 automated tests
-- Cloudflare Pages 與 GitHub 的自動部署流程尚未打通
 
 ## 交接提醒
 
