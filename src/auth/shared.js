@@ -89,6 +89,7 @@ export function renderAuthPanel(mode) {
 
       <h2 class="auth-panel-heading">${escapeHtml(config.heading)}</h2>
       <p class="auth-panel-copy">${escapeHtml(config.copy)}</p>
+      <p class="auth-feedback" data-auth-feedback hidden aria-live="polite"></p>
 
       <form class="auth-form" data-auth-form novalidate>
         ${renderFields(config.fields)}
@@ -106,6 +107,7 @@ export function renderAuthPanel(mode) {
 export function bindAuthPanel(root, mode, options = {}) {
   const form = root.querySelector("[data-auth-form]")
   const modeButtons = root.querySelectorAll("[data-auth-switch]")
+  const feedback = root.querySelector("[data-auth-feedback]")
 
   modeButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -116,7 +118,44 @@ export function bindAuthPanel(root, mode, options = {}) {
 
   if (!form) return
 
-  form.addEventListener("submit", (event) => {
+  const inputs = [...form.querySelectorAll("input, button")]
+  const submitButton = form.querySelector(".auth-submit")
+  const defaultSubmitLabel = submitButton?.textContent || ""
+
+  const setFeedback = (type, message) => {
+    if (!feedback) return
+
+    if (!message) {
+      feedback.hidden = true
+      feedback.textContent = ""
+      feedback.className = "auth-feedback"
+      return
+    }
+
+    feedback.hidden = false
+    feedback.textContent = message
+    feedback.className = type ? `auth-feedback is-${type}` : "auth-feedback"
+  }
+
+  const setPending = (pending) => {
+    form.classList.toggle("is-pending", pending)
+    modeButtons.forEach((button) => {
+      button.disabled = pending
+    })
+    inputs.forEach((control) => {
+      control.disabled = pending
+    })
+
+    if (submitButton) {
+      submitButton.textContent = pending ? "處理中…" : defaultSubmitLabel
+    }
+  }
+
+  form.addEventListener("input", () => {
+    setFeedback("", "")
+  })
+
+  form.addEventListener("submit", async (event) => {
     event.preventDefault()
 
     if (mode === "register") {
@@ -135,7 +174,37 @@ export function bindAuthPanel(root, mode, options = {}) {
 
     if (!form.reportValidity()) return
 
-    form.reset()
+    if (!options.onSubmit) {
+      form.reset()
+      return
+    }
+
+    const formData = new FormData(form)
+    const values = Object.fromEntries(formData.entries())
+
+    setPending(true)
+
+    try {
+      const result = await options.onSubmit({
+        mode,
+        values,
+        form,
+        setFeedback,
+      })
+
+      if (result?.message) {
+        setFeedback(result.type || "info", result.message)
+      }
+
+      if (result?.resetForm) {
+        form.reset()
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "操作失敗，請稍後再試。"
+      setFeedback("error", message)
+    } finally {
+      setPending(false)
+    }
   })
 }
 

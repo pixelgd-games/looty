@@ -19,7 +19,7 @@ export function renderLobby() {
           <a class="brand-link" href="/" aria-label="Looty lobby">
             <span class="brand-mark">Looty</span>
           </a>
-          <div class="topbar-actions" aria-label="member actions">
+          <div class="topbar-actions" id="topbarActions" aria-label="member actions">
             <button class="topbar-action" type="button" data-auth-open="login" aria-haspopup="dialog" aria-controls="authModal">登入</button>
             <button class="topbar-action topbar-action-primary" type="button" data-auth-open="register" aria-haspopup="dialog" aria-controls="authModal">註冊</button>
           </div>
