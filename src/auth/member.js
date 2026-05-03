@@ -7,13 +7,13 @@ export async function loginMember({ email, password }) {
   })
 
   if (error) {
-    throw new Error("登入失敗：" + error.message)
+    throw new Error("Login failed: " + error.message)
   }
 
   const session = data.session ?? (await getCurrentMemberSession())
 
   if (!session?.user) {
-    throw new Error("登入失敗：沒有取得會員 session")
+    throw new Error("Login failed: member session was not returned.")
   }
 
   const player = await ensureMyPlayer()
@@ -31,7 +31,7 @@ export async function registerMember({ displayName, email, password }) {
   })
 
   if (error) {
-    throw new Error("註冊失敗：" + error.message)
+    throw new Error("Registration failed: " + error.message)
   }
 
   if (!data.session?.user) {
@@ -55,7 +55,7 @@ export async function signOutMember() {
   const { error } = await supabase.auth.signOut()
 
   if (error) {
-    throw new Error("登出失敗：" + error.message)
+    throw new Error("Sign out failed: " + error.message)
   }
 }
 
@@ -66,7 +66,7 @@ export async function getCurrentMemberSession() {
   } = await supabase.auth.getSession()
 
   if (error) {
-    throw new Error("讀取會員狀態失敗：" + error.message)
+    throw new Error("Failed to read member session: " + error.message)
   }
 
   return session
@@ -76,13 +76,13 @@ export async function ensureMyPlayer() {
   const { data, error } = await supabase.rpc("ensure_my_player_v1")
 
   if (error) {
-    throw new Error("會員資料初始化失敗：" + error.message)
+    throw new Error("Failed to initialize member profile: " + error.message)
   }
 
   const row = Array.isArray(data) ? data[0] : data
 
   if (!row?.player_id) {
-    throw new Error("會員資料初始化失敗：RPC 沒有回傳 player_id")
+    throw new Error("Failed to initialize member profile: RPC did not return player_id.")
   }
 
   return row

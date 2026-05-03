@@ -14,41 +14,59 @@ export function renderLobby() {
     <div class="shell">
       ${renderBeamField()}
 
-      <header class="topbar-shell">
-        <div class="topbar">
-          <a class="brand-link" href="/" aria-label="Looty lobby">
+      <div class="lobby-layout">
+        <aside class="profile-sidebar" aria-label="member profile">
+          <a class="brand-link profile-brand" href="/" aria-label="Looty lobby">
             <span class="brand-mark">Looty</span>
           </a>
-          <div class="topbar-actions" id="topbarActions" aria-label="member actions">
-            <button class="topbar-action" type="button" data-auth-open="login" aria-haspopup="dialog" aria-controls="authModal">登入</button>
-            <button class="topbar-action topbar-action-primary" type="button" data-auth-open="register" aria-haspopup="dialog" aria-controls="authModal">註冊</button>
-          </div>
-        </div>
-      </header>
 
-      <section class="hero" id="hero" aria-label="Looty hero image"></section>
+          <section class="profile-panel">
+            <div class="profile-avatar" id="profileAvatar" aria-hidden="true">L</div>
 
-      <main class="content" id="gamesSection">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">PUBLIC LOBBY</p>
-            <h2 class="section-title">全部遊戲</h2>
+            <div class="profile-copy">
+              <p class="profile-kicker">PLAYER</p>
+              <h1 class="profile-name" id="profileName">Guest</h1>
+              <p class="profile-status" id="profileStatus">Log in to sync your Looty profile.</p>
+            </div>
+
+            <div class="profile-wallet">
+              <span class="profile-wallet-label">Balance</span>
+              <strong class="profile-wallet-value" id="profileBalance">--</strong>
+            </div>
+          </section>
+
+          <div class="profile-actions" id="profileActions" aria-label="member actions">
+            <button class="profile-action" type="button" data-auth-open="login" aria-haspopup="dialog" aria-controls="authModal">Log In</button>
+            <button class="profile-action profile-action-primary" type="button" data-auth-open="register" aria-haspopup="dialog" aria-controls="authModal">Sign Up</button>
           </div>
+        </aside>
+
+        <div class="lobby-main">
+          <section class="hero" id="hero" aria-label="Looty hero image"></section>
+
+          <main class="content" id="gamesSection">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">PUBLIC LOBBY</p>
+                <h2 class="section-title">All Games</h2>
+              </div>
+            </div>
+            <div class="grid" id="gameGrid"></div>
+          </main>
         </div>
-        <div class="grid" id="gameGrid"></div>
-      </main>
+      </div>
 
       <section class="auth-modal" id="authModal" aria-hidden="true" hidden>
         <div class="auth-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
-          <button class="auth-modal-close" type="button" data-auth-close aria-label="關閉會員視窗">X</button>
+          <button class="auth-modal-close" type="button" data-auth-close aria-label="Close member dialog">X</button>
 
           <div class="auth-modal-surface">
             <div class="auth-layout auth-modal-layout">
               <section class="auth-stage auth-modal-stage" aria-label="Looty member visual">
                 <div class="auth-stage-copy">
                   <p class="auth-kicker">MEMBER ACCESS</p>
-                  <h2 class="auth-title" id="authModalTitle">會員登入</h2>
-                  <p class="auth-lead" id="authModalLead">回到 Looty，直接從你的遊戲入口繼續開始。</p>
+                  <h2 class="auth-title" id="authModalTitle">Member Login</h2>
+                  <p class="auth-lead" id="authModalLead">Enter Looty to keep your game state and inventory connected.</p>
                 </div>
               </section>
 

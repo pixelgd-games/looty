@@ -1,13 +1,13 @@
 const AUTH_MODE_CONFIG = {
   login: {
-    title: "會員登入",
-    lead: "回到 Looty，直接從你的遊戲入口繼續開始。",
-    heading: "登入你的 Looty 帳號",
-    copy: "輸入你的帳號資訊，直接從 Looty 繼續開始。",
-    submitLabel: "登入",
-    altLabel: "還沒有帳號？",
+    title: "Member Login",
+    lead: "Return to Looty and keep your game state connected.",
+    heading: "Log in to Looty",
+    copy: "Enter your account details to continue from the Looty lobby.",
+    submitLabel: "Log In",
+    altLabel: "New here?",
     altMode: "register",
-    altAction: "前往註冊",
+    altAction: "Create an account",
     fields: [
       {
         label: "Email",
@@ -18,30 +18,30 @@ const AUTH_MODE_CONFIG = {
         required: true,
       },
       {
-        label: "密碼",
+        label: "Password",
         name: "password",
         type: "password",
-        placeholder: "輸入密碼",
+        placeholder: "Enter your password",
         autocomplete: "current-password",
         required: true,
       },
     ],
   },
   register: {
-    title: "建立帳號",
-    lead: "先把你的會員入口就位，之後再把登入流程正式接上。",
-    heading: "建立你的 Looty 帳號",
-    copy: "填好基本資料，快速完成你的 Looty 帳號建立。",
-    submitLabel: "註冊",
-    altLabel: "已經有帳號？",
+    title: "Create Account",
+    lead: "Set up your Looty member profile before you play.",
+    heading: "Create your Looty account",
+    copy: "Fill in the basics to start using your member profile.",
+    submitLabel: "Sign Up",
+    altLabel: "Already registered?",
     altMode: "login",
-    altAction: "前往登入",
+    altAction: "Log in",
     fields: [
       {
-        label: "顯示名稱",
+        label: "Display Name",
         name: "displayName",
         type: "text",
-        placeholder: "你想顯示的名稱",
+        placeholder: "Name shown in the lobby",
         autocomplete: "nickname",
         required: true,
       },
@@ -54,18 +54,18 @@ const AUTH_MODE_CONFIG = {
         required: true,
       },
       {
-        label: "密碼",
+        label: "Password",
         name: "password",
         type: "password",
-        placeholder: "至少 8 碼",
+        placeholder: "At least 8 characters",
         autocomplete: "new-password",
         required: true,
       },
       {
-        label: "確認密碼",
+        label: "Confirm Password",
         name: "confirmPassword",
         type: "password",
-        placeholder: "再次輸入密碼",
+        placeholder: "Enter the password again",
         autocomplete: "new-password",
         required: true,
       },
@@ -83,8 +83,8 @@ export function renderAuthPanel(mode) {
   return `
     <section class="auth-panel">
       <div class="auth-tabs" aria-label="Auth modal switch">
-        ${renderTab(mode, "login", "登入")}
-        ${renderTab(mode, "register", "註冊")}
+        ${renderTab(mode, "login", "Log In")}
+        ${renderTab(mode, "register", "Sign Up")}
       </div>
 
       <h2 class="auth-panel-heading">${escapeHtml(config.heading)}</h2>
@@ -147,7 +147,7 @@ export function bindAuthPanel(root, mode, options = {}) {
     })
 
     if (submitButton) {
-      submitButton.textContent = pending ? "處理中…" : defaultSubmitLabel
+      submitButton.textContent = pending ? "Working..." : defaultSubmitLabel
     }
   }
 
@@ -168,7 +168,7 @@ export function bindAuthPanel(root, mode, options = {}) {
       }
 
       if (password !== confirmPassword && confirmPasswordField instanceof HTMLInputElement) {
-        confirmPasswordField.setCustomValidity("兩次輸入的密碼還不一樣")
+        confirmPasswordField.setCustomValidity("The passwords do not match.")
       }
     }
 
@@ -200,7 +200,7 @@ export function bindAuthPanel(root, mode, options = {}) {
         form.reset()
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "操作失敗，請稍後再試。"
+      const message = error instanceof Error ? error.message : "The action failed. Please try again later."
       setFeedback("error", message)
     } finally {
       setPending(false)

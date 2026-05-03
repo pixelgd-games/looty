@@ -33,21 +33,25 @@ try {
   await enableBrowserDomains(client)
 
   await expectPageText(client, appPort, "/", (text) => {
-    return text.includes("Looty") && text.includes("全部遊戲")
-  }, "首頁能載入")
+    const normalizedText = text.toLowerCase()
+    return normalizedText.includes("looty")
+      && normalizedText.includes("player")
+      && normalizedText.includes("balance")
+      && normalizedText.includes("all games")
+  }, "Home loads")
 
   await expectPageText(client, appPort, "/game/", (text) => {
-    return text.includes("LOOTY-GAME-001") && text.includes("缺少遊戲代碼")
-  }, "Loader 缺 slug 有錯誤畫面")
+    return text.includes("LOOTY-GAME-001")
+  }, "Loader missing slug shows error")
 
   await expectPageText(client, appPort, "/admin/login/", (text) => {
-    return text.includes("Looty Admin") && text.includes("用 Google 登入")
-  }, "Admin login 能載入")
+    return text.includes("Looty Admin") && text.includes("Google")
+  }, "Admin login loads")
 
   await showSyntheticError(client)
   await waitForText(client, (text) => {
-    return text.includes("LOOTY-SMOKE-001") && text.includes("測試錯誤視窗")
-  }, "共用錯誤視窗能顯示代碼")
+    return text.includes("LOOTY-SMOKE-001") && text.includes("Smoke test error modal")
+  }, "Shared error modal shows code")
 
   client.ws.close()
   console.log("Smoke check passed.")
@@ -181,8 +185,8 @@ async function showSyntheticError(client) {
       import("/src/ui/error-modal.js").then(({ showErrorModal }) => {
         showErrorModal({
           code: "LOOTY-SMOKE-001",
-          title: "測試錯誤",
-          message: "測試錯誤視窗",
+          title: "Smoke test error",
+          message: "Smoke test error modal",
           reload: false,
         })
       })
@@ -202,7 +206,7 @@ async function waitForText(client, predicate, label) {
 
     lastText = result.result.value || ""
     if (predicate(lastText)) {
-      console.log(`✓ ${label}`)
+      console.log(`OK ${label}`)
       return lastText
     }
 

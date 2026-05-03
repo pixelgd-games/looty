@@ -4,7 +4,11 @@ import { ERROR_CODES, showErrorModal } from "../../ui/error-modal.js"
 
 export function initLobbyAuthModal(elements) {
   const {
-    topbarActions,
+    profileActions,
+    profileAvatar,
+    profileBalance,
+    profileName,
+    profileStatus,
     authModal,
     authModalLead,
     authModalPanel,
@@ -19,6 +23,8 @@ export function initLobbyAuthModal(elements) {
     session: null,
     player: null,
   }
+
+  renderProfileSummary()
 
   const focusFirstField = () => {
     authModalPanel.querySelector(".auth-input")?.focus()
@@ -44,14 +50,14 @@ export function initLobbyAuthModal(elements) {
           if (result.needsEmailVerification) {
             return {
               type: "success",
-              message: "註冊成功，請先驗證信箱後再登入。",
+              message: "Registration received. Please check your email to verify the account.",
               resetForm: true,
             }
           }
 
           state.session = result.session
           state.player = result.player
-          renderTopbarActions()
+          renderMemberActions()
           closeModal()
           return { resetForm: true }
         }
@@ -59,7 +65,7 @@ export function initLobbyAuthModal(elements) {
         const result = await loginMember(values)
         state.session = result.session
         state.player = result.player
-        renderTopbarActions()
+        renderMemberActions()
         closeModal()
         return { resetForm: true }
       },
@@ -86,7 +92,7 @@ export function initLobbyAuthModal(elements) {
     requestAnimationFrame(focusFirstField)
   }
 
-  const handleTopbarClick = async (event) => {
+  const handleProfileActionClick = async (event) => {
     const openButton = event.target.closest("[data-auth-open]")
     if (openButton) {
       openModal(openButton.dataset.authOpen, openButton)
@@ -102,22 +108,22 @@ export function initLobbyAuthModal(elements) {
       await signOutMember()
       state.session = null
       state.player = null
-      renderTopbarActions()
+      renderMemberActions()
       closeModal()
     } catch (error) {
       logoutButton.disabled = false
       showErrorModal({
         code: ERROR_CODES.AUTH_SIGN_OUT_FAILED,
-        title: "會員登出失敗",
-        message: "目前無法完成登出，請稍後再試。",
+        title: "Sign out failed",
+        message: "We could not sign you out right now. Please try again later.",
         error,
         reload: false,
       })
     }
   }
 
-  topbarActions?.addEventListener("click", (event) => {
-    void handleTopbarClick(event)
+  profileActions?.addEventListener("click", (event) => {
+    void handleProfileActionClick(event)
   })
 
   authCloseButtons.forEach((button) => {
@@ -138,26 +144,20 @@ export function initLobbyAuthModal(elements) {
 
   void syncMemberState()
 
-  function renderTopbarActions() {
-    if (!topbarActions) return
+  function renderMemberActions() {
+    renderProfileSummary()
+
+    if (!profileActions) return
 
     if (!state.session?.user) {
-      topbarActions.replaceChildren(
-        createAuthButton("登入", "login"),
-        createAuthButton("註冊", "register", true),
+      profileActions.replaceChildren(
+        createAuthButton("Log In", "login"),
+        createAuthButton("Sign Up", "register", true),
       )
       return
     }
 
-    const summary = document.createElement("div")
-    summary.className = "topbar-member"
-
-    const name = document.createElement("span")
-    name.className = "topbar-member-name"
-    name.textContent = getMemberName(state.session.user)
-
-    summary.append(name)
-    topbarActions.replaceChildren(summary, createBalancePill(state.player), createLogoutButton())
+    profileActions.replaceChildren(createLogoutButton())
   }
 
   async function syncMemberState() {
@@ -173,14 +173,37 @@ export function initLobbyAuthModal(elements) {
     } catch (error) {
       showErrorModal({
         code: ERROR_CODES.AUTH_MEMBER_STATE_FAILED,
-        title: "會員狀態讀取失敗",
-        message: "目前無法確認會員登入狀態，請稍後再試。",
+        title: "Member state failed to load",
+        message: "We could not load your member session. Please try again later.",
         error,
         reload: false,
       })
     }
 
-    renderTopbarActions()
+    renderMemberActions()
+  }
+
+  function renderProfileSummary() {
+    const name = state.session?.user ? getMemberName(state.session.user) : "Guest"
+    const balance = state.player ? formatBalance(state.player.balance) : "--"
+
+    if (profileName) {
+      profileName.textContent = name
+    }
+
+    if (profileStatus) {
+      profileStatus.textContent = state.session?.user
+        ? "Member profile ready."
+        : "Log in to sync your Looty profile."
+    }
+
+    if (profileBalance) {
+      profileBalance.textContent = balance
+    }
+
+    if (profileAvatar) {
+      profileAvatar.textContent = getInitial(name)
+    }
   }
 }
 
@@ -190,7 +213,7 @@ function normalizeMode(mode) {
 
 function createAuthButton(label, mode, primary = false) {
   const button = document.createElement("button")
-  button.className = primary ? "topbar-action topbar-action-primary" : "topbar-action"
+  button.className = primary ? "profile-action profile-action-primary" : "profile-action"
   button.type = "button"
   button.dataset.authOpen = mode
   button.setAttribute("aria-haspopup", "dialog")
@@ -201,18 +224,11 @@ function createAuthButton(label, mode, primary = false) {
 
 function createLogoutButton() {
   const button = document.createElement("button")
-  button.className = "topbar-action"
+  button.className = "profile-action"
   button.type = "button"
   button.dataset.memberLogout = "true"
-  button.textContent = "登出"
+  button.textContent = "Sign Out"
   return button
-}
-
-function createBalancePill(player) {
-  const pill = document.createElement("span")
-  pill.className = "topbar-balance"
-  pill.textContent = `餘額 ${player ? formatBalance(player.balance) : "--"}`
-  return pill
 }
 
 function getMemberName(user) {
@@ -231,7 +247,11 @@ function getMemberName(user) {
     if (name) return name
   }
 
-  return "Looty 會員"
+  return "Looty Member"
+}
+
+function getInitial(value) {
+  return String(value || "L").trim().slice(0, 1).toUpperCase() || "L"
 }
 
 function formatBalance(balance) {

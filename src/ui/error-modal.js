@@ -66,7 +66,7 @@ export function showErrorModal(options = {}) {
 
   const code = document.createElement("p")
   code.className = "looty-error-code"
-  code.textContent = `錯誤代碼：${config.code}`
+  code.textContent = `Error code: ${config.code}`
 
   const actions = document.createElement("div")
   actions.className = "looty-error-actions"
@@ -75,7 +75,7 @@ export function showErrorModal(options = {}) {
     actions.append(createActionButton(config.primaryAction, "primary"))
   } else if (config.reload !== false) {
     actions.append(createActionButton({
-      label: "重新載入",
+      label: "Reload",
       onClick: () => location.reload(),
     }, "primary"))
   }
@@ -84,7 +84,7 @@ export function showErrorModal(options = {}) {
     actions.append(createActionButton(config.secondaryAction))
   } else if (config.close !== false) {
     actions.append(createActionButton({
-      label: "關閉",
+      label: "Close",
       onClick: closeErrorModal,
       closeBeforeAction: false,
     }))
@@ -130,8 +130,8 @@ export function closeErrorModal() {
 function normalizeOptions(options) {
   return {
     code: options.code || "LOOTY-UNKNOWN-000",
-    title: options.title || "發生錯誤",
-    message: options.message || "目前系統發生問題，請稍後再試。",
+    title: options.title || "Something went wrong",
+    message: options.message || "The system is having trouble right now. Please try again later.",
     error: options.error,
     reload: options.reload,
     close: options.close,
@@ -144,7 +144,7 @@ function createActionButton(action, modifier = "") {
   const button = document.createElement("button")
   button.type = "button"
   button.className = modifier ? `looty-error-action ${modifier}` : "looty-error-action"
-  button.textContent = action.label || "確認"
+  button.textContent = action.label || "OK"
   button.addEventListener("click", () => {
     if (action.closeBeforeAction !== false) {
       closeErrorModal()
