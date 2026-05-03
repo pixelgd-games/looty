@@ -155,18 +155,18 @@ function createRatingPanel(game, gameUrl) {
   value.className = "game-movie-rating-value"
   value.textContent = getRating(game)
 
-  rating.append(value)
-
   const label = document.createElement("span")
   label.className = "game-movie-rating-label"
   label.textContent = TEXT.rating
+
+  rating.append(value, label)
 
   const playLink = document.createElement("a")
   playLink.className = "game-movie-play"
   playLink.href = gameUrl
   playLink.textContent = TEXT.play
 
-  panel.append(rating, label, playLink)
+  panel.append(rating, playLink)
   return panel
 }
 
