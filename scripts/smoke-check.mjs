@@ -37,7 +37,8 @@ try {
     return normalizedText.includes("looty")
       && normalizedText.includes("player")
       && normalizedText.includes("balance")
-      && normalizedText.includes("all games")
+      && normalizedText.includes("game name")
+      && normalizedText.includes("lord of gomoku")
   }, "Home loads")
 
   await expectPageText(client, appPort, "/game/", (text) => {

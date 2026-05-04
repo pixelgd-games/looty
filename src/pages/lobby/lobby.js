@@ -66,8 +66,8 @@ export function renderLobby() {
           <main class="content" id="gamesSection">
             <div class="section-head">
               <div>
-                <p class="section-kicker">PUBLIC LOBBY</p>
-                <h2 class="section-title">All Games</h2>
+                <p class="section-kicker">GAME NAME</p>
+                <h2 class="section-title">Lord of Gomoku</h2>
               </div>
             </div>
             <div class="grid" id="gameGrid"></div>
