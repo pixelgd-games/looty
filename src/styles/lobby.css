@@ -896,14 +896,14 @@ body.auth-modal-open{
 
 @media (max-width:1100px){
   .lobby-layout{
-    grid-template-columns:minmax(0,1fr);
-    gap:22px;
-    width:min(1180px,calc(100% - 32px));
-    padding:14px 0 64px;
+    display:block;
+    width:min(720px,calc(100% - 24px));
+    padding:12px 0 44px;
   }
 
   .lobby-main{
     grid-column:auto;
+    width:100%;
     padding-top:0;
   }
 
@@ -913,9 +913,13 @@ body.auth-modal-open{
 
   .profile-sidebar{
     position:static;
+    width:100%;
+    height:auto;
     min-height:auto;
-    padding:16px;
-    border-radius:24px;
+    margin-bottom:14px;
+    padding:14px;
+    overflow:visible;
+    border-radius:20px;
     background:
       radial-gradient(circle at 16% 20%, rgba(235,255,61,.12) 0%, rgba(235,255,61,0) 28%),
       linear-gradient(110deg, rgba(18,32,25,.78) 0%, rgba(13,18,26,.72) 100%);
@@ -923,21 +927,20 @@ body.auth-modal-open{
   }
 
   .profile-brand{
-    margin-bottom:14px;
+    margin-bottom:12px;
     justify-content:flex-start;
   }
 
   .profile-panel{
-    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-columns:58px minmax(0,1fr) auto;
     align-items:center;
-    gap:16px;
-    padding:16px;
+    gap:12px;
   }
 
   .profile-avatar{
-    width:72px;
-    height:72px;
-    font-size:28px;
+    width:58px;
+    height:58px;
+    font-size:24px;
   }
 
   .profile-wallet{
@@ -945,13 +948,115 @@ body.auth-modal-open{
   }
 
   .profile-wallet-value{
-    font-size:24px;
+    font-size:22px;
   }
 
   .profile-actions{
-    grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
+    grid-template-columns:repeat(2,minmax(0,1fr));
     margin-top:12px;
     padding-top:0;
+  }
+
+  .profile-actions .profile-action:only-child{
+    grid-column:1/-1;
+  }
+
+  .hero{
+    height:auto;
+    aspect-ratio:1600/720;
+  }
+
+  .content{
+    padding:22px 0 36px;
+  }
+
+  .section-head{
+    margin-bottom:14px;
+  }
+
+  .section-title{
+    font-size:26px;
+  }
+
+  .grid{
+    grid-template-columns:minmax(0,1fr);
+    gap:18px;
+  }
+
+  .game-movie-card{
+    grid-template-columns:112px minmax(0,1fr);
+    grid-template-areas:
+      "poster details"
+      "side side";
+    gap:14px 16px;
+    min-height:0;
+    padding:12px 0 18px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+
+  .game-movie-poster{
+    min-height:148px;
+    padding:12px;
+    border-radius:12px;
+  }
+
+  .game-movie-details{
+    align-self:start;
+    padding-top:2px;
+  }
+
+  .game-movie-title{
+    margin-bottom:10px;
+    font-size:22px;
+  }
+
+  .game-movie-meta{
+    gap:2px;
+    margin-bottom:10px;
+  }
+
+  .game-movie-meta-row{
+    font-size:12px;
+  }
+
+  .game-movie-synopsis{
+    display:-webkit-box;
+    max-width:none;
+    margin-bottom:10px;
+    overflow:hidden;
+    font-size:13px;
+    line-height:1.45;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+  }
+
+  .game-movie-tags{
+    gap:8px;
+    margin-bottom:0;
+  }
+
+  .game-movie-slug{
+    display:none;
+  }
+
+  .game-movie-side{
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    justify-items:start;
+    gap:12px;
+  }
+
+  .game-movie-rating{
+    place-items:start;
+  }
+
+  .game-movie-rating-value{
+    font-size:34px;
+  }
+
+  .game-movie-play{
+    justify-self:end;
+    min-width:96px;
   }
 }
 
@@ -978,9 +1083,6 @@ body.auth-modal-open{
     border-radius:0 0 24px 24px;
   }
 
-  .grid{
-    grid-template-columns:minmax(0,720px);
-  }
 }
 
 @media (max-width:640px){
@@ -1025,27 +1127,14 @@ body.auth-modal-open{
     border-radius:0 0 18px 18px;
   }
 
-  .lobby-layout{
-    width:min(100% - 24px,1180px);
-  }
-
   .profile-panel{
-    grid-template-columns:auto minmax(0,1fr);
-    gap:14px;
+    grid-template-columns:52px minmax(0,1fr);
+    gap:12px;
   }
 
   .profile-wallet{
-    grid-column:1/-1;
-  }
-
-  .hero{
-    height:auto;
-    aspect-ratio:1600/720;
-  }
-
-  .grid{
-    grid-template-columns:minmax(0,1fr);
-    gap:18px;
+    grid-column:2;
+    justify-items:start;
   }
 
   .section-head{
@@ -1053,30 +1142,24 @@ body.auth-modal-open{
   }
 
   .game-movie-card{
-    grid-template-columns:minmax(0,1fr);
+    grid-template-columns:96px minmax(0,1fr);
     grid-template-areas:
-      "poster"
-      "details"
-      "side";
-    gap:18px;
-    padding:14px;
-    border-radius:14px;
+      "poster details"
+      "side side";
+    gap:14px;
+    padding:12px 0 18px;
   }
 
   .game-movie-poster{
-    min-height:220px;
+    min-height:128px;
   }
 
   .game-movie-title{
-    font-size:24px;
+    font-size:20px;
   }
 
   .game-movie-synopsis{
     font-size:14px;
-  }
-
-  .game-movie-tags{
-    gap:8px;
   }
 
   .game-movie-tag{
@@ -1089,19 +1172,8 @@ body.auth-modal-open{
     margin-right:8px;
   }
 
-  .game-movie-side{
-    grid-template-columns:auto 1fr auto;
-    align-items:center;
-    justify-items:start;
-  }
-
-  .game-movie-rating{
-    width:auto;
-    height:auto;
-  }
-
   .game-movie-rating-value{
-    font-size:34px;
+    font-size:30px;
   }
 
   .game-movie-play{
