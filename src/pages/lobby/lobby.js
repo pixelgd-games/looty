@@ -14,6 +14,7 @@ const FEATURED_VIDEO = {
   title: "Lord of Gomoku",
   meta: "Auto replay preview",
   poster: "/hero/looty-hero-main.webp",
+  youtubeId: "h_BZhuNVxjw",
   source: "",
 }
 
@@ -126,6 +127,29 @@ function renderGameplayLoop() {
 }
 
 function renderGameplayMedia() {
+  if (FEATURED_VIDEO.youtubeId) {
+    const embedParams = new URLSearchParams({
+      autoplay: "1",
+      controls: "0",
+      loop: "1",
+      mute: "1",
+      playlist: FEATURED_VIDEO.youtubeId,
+      playsinline: "1",
+      rel: "0",
+    })
+
+    return `
+              <iframe
+                class="gameplay-video gameplay-youtube"
+                src="https://www.youtube-nocookie.com/embed/${FEATURED_VIDEO.youtubeId}?${embedParams}"
+                title="${FEATURED_VIDEO.title} video preview"
+                allow="autoplay; encrypted-media; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+    `
+  }
+
   if (!FEATURED_VIDEO.source) {
     return `
               <div class="gameplay-loop-fallback" style="--gameplay-poster:url('${FEATURED_VIDEO.poster}')">

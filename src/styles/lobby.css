@@ -375,6 +375,10 @@ body.auth-modal-open{
   object-fit:cover;
 }
 
+.gameplay-youtube{
+  border:0;
+}
+
 .gameplay-loop-fallback{
   overflow:hidden;
   background:
@@ -545,7 +549,7 @@ body.auth-modal-open{
   background:var(--hero-image, linear-gradient(135deg, #121612 0%, #090b0a 100%));
   background-position:center;
   background-repeat:no-repeat;
-  background-size:100% 100%;
+  background-size:cover;
   box-shadow:
     var(--glass-shadow),
     inset 0 1px 0 rgba(255,255,255,.06);
