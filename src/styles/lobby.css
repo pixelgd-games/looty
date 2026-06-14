@@ -375,10 +375,6 @@ body.auth-modal-open{
   object-fit:cover;
 }
 
-.gameplay-youtube{
-  border:0;
-}
-
 .gameplay-loop-fallback{
   overflow:hidden;
   background:
