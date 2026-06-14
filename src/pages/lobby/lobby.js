@@ -1,14 +1,3 @@
-const HORIZONTAL_BEAMS = [
-  { tone: "cyan", top: "16%", width: "34vw", height: "1px", duration: "14.8s", delay: "-4.2s", opacity: ".28" },
-  { tone: "blue", top: "24%", width: "48vw", height: "2px", duration: "11.9s", delay: "-8.1s", opacity: ".42" },
-  { tone: "pink", top: "34%", width: "26vw", height: "1px", duration: "13.4s", delay: "-2.9s", opacity: ".24" },
-  { tone: "cyan", top: "43%", width: "58vw", height: "3px", duration: "11.2s", delay: "-6.4s", opacity: ".56" },
-  { tone: "blue", top: "52%", width: "42vw", height: "2px", duration: "14.6s", delay: "-10.3s", opacity: ".3" },
-  { tone: "cyan", top: "61%", width: "64vw", height: "4px", duration: "12.4s", delay: "-5.5s", opacity: ".62" },
-  { tone: "pink", top: "71%", width: "30vw", height: "1px", duration: "15.9s", delay: "-7.6s", opacity: ".22" },
-  { tone: "blue", top: "81%", width: "46vw", height: "2px", duration: "13.9s", delay: "-11.4s", opacity: ".34" },
-]
-
 const FEATURED_VIDEO = {
   kicker: "GAMEPLAY LOOP",
   title: "Lord of Gomoku",
@@ -31,8 +20,6 @@ const GAME_LEADERBOARD = {
 export function renderLobby() {
   return `
     <div class="shell">
-      ${renderBeamField()}
-
       <div class="lobby-layout">
         <aside class="profile-sidebar" aria-label="member profile">
           <a class="brand-link profile-brand" href="/" aria-label="Looty lobby">
@@ -165,31 +152,4 @@ function renderLeaderboardItem(item) {
                 <strong class="leaderboard-score">${item.score}</strong>
               </li>
   `
-}
-
-function renderBeamField() {
-  return `
-      <div class="beam-field" aria-hidden="true">
-        <div class="beam-field-sheen"></div>
-        <div class="beam-field-vignette"></div>
-        <div class="beam-field-stream">
-          ${HORIZONTAL_BEAMS.map(renderBeam).join("")}
-        </div>
-      </div>
-  `
-}
-
-function renderBeam(beam) {
-  return `<span class="beam beam-${beam.tone}" style="${buildBeamStyle(beam)}"></span>`
-}
-
-function buildBeamStyle(beam) {
-  return [
-    `--beam-top:${beam.top}`,
-    `--beam-width:${beam.width}`,
-    `--beam-height:${beam.height}`,
-    `--beam-duration:${beam.duration}`,
-    `--beam-delay:${beam.delay}`,
-    `--beam-opacity:${beam.opacity}`,
-  ].join("; ")
 }

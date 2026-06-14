@@ -4,109 +4,6 @@ body.auth-modal-open{
   overflow:hidden;
 }
 
-.shell::before{
-  z-index:-2;
-}
-
-.beam-field{
-  position:fixed;
-  inset:0;
-  z-index:-1;
-  isolation:isolate;
-  overflow:hidden;
-  pointer-events:none;
-  contain:paint;
-  transform:translateZ(0);
-  -webkit-mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.92) 8%, rgba(0,0,0,.96) 88%, transparent 100%);
-  mask-image:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.92) 8%, rgba(0,0,0,.96) 88%, transparent 100%);
-}
-
-.beam-field-sheen,
-.beam-field-vignette,
-.beam-field-stream{
-  position:absolute;
-  inset:0;
-  backface-visibility:hidden;
-  transform:translateZ(0);
-}
-
-.beam-field-sheen{
-  inset:-8%;
-  background:
-    linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(124,235,255,.04) 24%, rgba(255,116,230,.06) 48%, rgba(124,235,255,.04) 74%, rgba(255,255,255,0) 100%);
-  filter:blur(34px);
-  opacity:.8;
-  will-change:transform, opacity;
-  animation:lobby-beam-sheen 18s ease-in-out infinite alternate;
-}
-
-.beam-field-vignette{
-  background:
-    radial-gradient(circle at 12% 24%, rgba(124,235,255,.08) 0%, transparent 24%),
-    radial-gradient(circle at 84% 72%, rgba(255,116,230,.08) 0%, transparent 26%),
-    linear-gradient(180deg, rgba(7,10,18,.1) 0%, rgba(7,10,18,0) 28%, rgba(7,10,18,.18) 100%);
-  opacity:.78;
-}
-
-.beam-field-stream{
-  mix-blend-mode:screen;
-  will-change:opacity;
-}
-
-.beam{
-  position:absolute;
-  left:-36vw;
-  top:var(--beam-top);
-  width:var(--beam-width);
-  height:var(--beam-height);
-  border-radius:999px;
-  opacity:0;
-  will-change:transform, opacity;
-  backface-visibility:hidden;
-  animation:
-    lobby-beam-travel var(--beam-duration) cubic-bezier(.24,.04,.16,1) infinite,
-    lobby-beam-fade var(--beam-duration) linear infinite;
-  animation-delay:var(--beam-delay), var(--beam-delay);
-}
-
-.beam::before,
-.beam::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-}
-
-.beam::before{
-  inset:-8px 0;
-  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--beam-soft) 18%, var(--beam-line) 56%, rgba(255,255,255,.96) 84%, rgba(255,255,255,0) 100%);
-  filter:blur(10px);
-  opacity:.82;
-}
-
-.beam::after{
-  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.04) 18%, var(--beam-line) 62%, rgba(255,255,255,.98) 92%, rgba(255,255,255,0) 100%);
-  box-shadow:0 0 16px var(--beam-glow);
-}
-
-.beam-cyan{
-  --beam-line:rgba(136,241,255,.98);
-  --beam-soft:rgba(86,186,255,.3);
-  --beam-glow:rgba(86,186,255,.28);
-}
-
-.beam-blue{
-  --beam-line:rgba(105,182,255,.92);
-  --beam-soft:rgba(64,115,255,.24);
-  --beam-glow:rgba(64,115,255,.26);
-}
-
-.beam-pink{
-  --beam-line:rgba(255,124,232,.84);
-  --beam-soft:rgba(255,92,194,.2);
-  --beam-glow:rgba(255,92,194,.22);
-}
-
 .auth-modal{
   position:fixed;
   inset:0;
@@ -806,50 +703,6 @@ body.auth-modal-open{
   background:#f3ff74;
 }
 
-@keyframes lobby-beam-travel{
-  from{
-    transform:translate3d(-22vw, 0, 0) scaleX(.76);
-  }
-
-  to{
-    transform:translate3d(138vw, 0, 0) scaleX(1.14);
-  }
-}
-
-@keyframes lobby-beam-fade{
-  from{
-    opacity:0;
-  }
-
-  9%{
-    opacity:var(--beam-opacity);
-  }
-
-  58%{
-    opacity:calc(var(--beam-opacity) * .9);
-  }
-
-  78%{
-    opacity:calc(var(--beam-opacity) * .68);
-  }
-
-  to{
-    opacity:0;
-  }
-}
-
-@keyframes lobby-beam-sheen{
-  from{
-    transform:translateX(-4vw);
-    opacity:.58;
-  }
-
-  to{
-    transform:translateX(4vw);
-    opacity:.9;
-  }
-}
-
 @keyframes gameplay-camera-pan{
   from{
     transform:scale(1.04) translate3d(-1.5%, -1%, 0);
@@ -1098,14 +951,6 @@ body.auth-modal-open{
 }
 
 @media (max-width:960px){
-  .beam-field-sheen{
-    filter:blur(28px);
-  }
-
-  .beam{
-    left:-44vw;
-  }
-
   .auth-modal-dialog{
     width:min(720px,100%);
   }
@@ -1123,18 +968,6 @@ body.auth-modal-open{
 }
 
 @media (max-width:640px){
-  .beam-field{
-    opacity:.76;
-  }
-
-  .beam-field-sheen{
-    filter:blur(20px);
-  }
-
-  .beam{
-    left:-52vw;
-  }
-
   .auth-modal{
     padding:12px;
   }
@@ -1219,15 +1052,8 @@ body.auth-modal-open{
 }
 
 @media (prefers-reduced-motion: reduce){
-  .beam-field-sheen,
-  .beam,
   .gameplay-loop-fallback,
   .gameplay-token{
     animation:none;
-  }
-
-  .beam{
-    transform:translate3d(22vw, 0, 0) scaleX(.94);
-    opacity:calc(var(--beam-opacity) * .52);
   }
 }
