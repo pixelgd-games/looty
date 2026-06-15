@@ -8,7 +8,7 @@ body{
 
 .shell{
   min-height:100vh;
-  padding:24px 20px 56px;
+  padding:18px 20px 52px;
 }
 
 .shell::before{
@@ -24,8 +24,8 @@ body{
   display:flex;
   align-items:center;
   justify-content:flex-start;
-  min-height:44px;
-  padding:0 0 18px;
+  min-height:38px;
+  padding:0 0 12px;
 }
 
 .site-header .brand-mark{
@@ -37,7 +37,7 @@ body{
 .hero{
   position:relative;
   width:100%;
-  height:clamp(220px,28vw,360px);
+  aspect-ratio:1600/373;
   overflow:hidden;
   border:0;
   border-radius:0;
@@ -52,7 +52,7 @@ body{
 .content{
   width:100%;
   margin:0;
-  padding:28px 0 0;
+  padding:22px 0 0;
 }
 
 .section-head{
@@ -128,7 +128,7 @@ body{
   align-items:end;
   justify-content:space-between;
   gap:16px;
-  margin:6px 0 18px;
+  margin:4px 0 16px;
 }
 
 .game-shelf-title{
@@ -255,11 +255,12 @@ body{
 
 @media (max-width:760px){
   .shell{
-    padding:14px 12px 36px;
+    padding:12px 12px 36px;
   }
 
   .site-header{
-    padding-bottom:14px;
+    min-height:34px;
+    padding-bottom:10px;
   }
 
   .site-header .brand-mark{
@@ -267,12 +268,11 @@ body{
   }
 
   .hero{
-    height:auto;
-    aspect-ratio:1600/720;
+    aspect-ratio:1600/373;
   }
 
   .content{
-    padding-top:22px;
+    padding-top:18px;
   }
 
   .section-title,
