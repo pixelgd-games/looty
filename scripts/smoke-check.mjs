@@ -35,9 +35,9 @@ try {
   await expectPageText(client, appPort, "/", (text) => {
     const normalizedText = text.toLowerCase()
     return normalizedText.includes("looty")
-      && normalizedText.includes("player")
-      && normalizedText.includes("balance")
-      && normalizedText.includes("game name")
+      && normalizedText.includes("game list")
+      && normalizedText.includes("featured games")
+      && normalizedText.includes("popular")
       && normalizedText.includes("lord of gomoku")
   }, "Home loads")
 

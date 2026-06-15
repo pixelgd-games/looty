@@ -120,6 +120,7 @@ function createTilePoster(game, gameUrl) {
 
 function createTileBody(game, gameUrl) {
   const displayName = getDisplayName(game)
+  const ratingValue = getRating(game)
   const body = document.createElement("div")
   body.className = "game-tile-body"
 
@@ -136,8 +137,8 @@ function createTileBody(game, gameUrl) {
 
   const rating = document.createElement("span")
   rating.className = "game-tile-rating"
-  rating.textContent = getRating(game)
-  rating.setAttribute("aria-label", `${TEXT.rating}: ${getRating(game)}`)
+  rating.textContent = ratingValue
+  rating.setAttribute("aria-label", `${TEXT.rating}: ${ratingValue}`)
 
   tags.append(type, rating)
 
