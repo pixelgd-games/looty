@@ -1,11 +1,10 @@
 import { buildGameUrl, getGameTypeLabel } from "./utils.js"
 
 const TEXT = {
+  allGames: "All",
   openGame: "Open game",
   play: "Play",
-  studio: "Studio",
-  mode: "Mode",
-  featured: "Featured",
+  popular: "Popular",
   rating: "Rating",
   emptyTitle: "No games available",
   emptyCopy: "Published games will appear here.",
@@ -18,6 +17,16 @@ const DISPLAY_NAMES = {
   "lord-of-gomoku": "Lord of Gomoku",
 }
 
+const CATEGORY_ITEMS = [
+  { type: "all", label: TEXT.allGames, mark: "ALL" },
+  { type: "slot", label: "Slots", mark: "S" },
+  { type: "casual", label: "Casual", mark: "C" },
+  { type: "arcade", label: "Arcade", mark: "A" },
+  { type: "card", label: "Card", mark: "K" },
+  { type: "fish", label: "Fish", mark: "F" },
+  { type: "live", label: "Live", mark: "L" },
+]
+
 export function renderGameGrid(gridElement, games) {
   if (!gridElement) return
 
@@ -26,7 +35,10 @@ export function renderGameGrid(gridElement, games) {
     return
   }
 
-  gridElement.replaceChildren(...games.map(createGameMovieCard))
+  const categoryRail = createCategoryRail(games)
+  const gameShelf = createGameShelf(games)
+
+  gridElement.replaceChildren(categoryRail, gameShelf)
 }
 
 export function renderGameGridError(gridElement) {
@@ -63,24 +75,78 @@ function createGridState({ className, title: titleText, copy: copyText }) {
   return wrapper
 }
 
-function createGameMovieCard(game) {
+function createCategoryRail(games) {
+  const wrapper = document.createElement("nav")
+  wrapper.className = "game-category-rail"
+  wrapper.setAttribute("aria-label", "game categories")
+
+  CATEGORY_ITEMS.forEach((category) => {
+    const count = getCategoryCount(games, category.type)
+    const item = document.createElement("div")
+    item.className = "game-category-item"
+
+    const mark = document.createElement("span")
+    mark.className = "game-category-mark"
+    mark.textContent = category.mark
+
+    const label = document.createElement("span")
+    label.className = "game-category-label"
+    label.textContent = category.label
+
+    const total = document.createElement("span")
+    total.className = "game-category-count"
+    total.textContent = String(count)
+
+    item.append(mark, label, total)
+    wrapper.append(item)
+  })
+
+  return wrapper
+}
+
+function createGameShelf(games) {
+  const section = document.createElement("section")
+  section.className = "game-shelf"
+  section.setAttribute("aria-label", TEXT.popular)
+
+  const header = document.createElement("div")
+  header.className = "game-shelf-head"
+
+  const title = document.createElement("h3")
+  title.className = "game-shelf-title"
+  title.textContent = TEXT.popular
+
+  const count = document.createElement("span")
+  count.className = "game-shelf-count"
+  count.textContent = `${games.length} games`
+
+  const tileGrid = document.createElement("div")
+  tileGrid.className = "game-tile-grid"
+  tileGrid.append(...games.map(createGameTile))
+
+  header.append(title, count)
+  section.append(header, tileGrid)
+
+  return section
+}
+
+function createGameTile(game) {
   const card = document.createElement("article")
-  card.className = "game-movie-card"
+  card.className = "game-tile"
 
   const gameUrl = getGameUrl(game)
   card.append(
-    createPoster(game, gameUrl),
-    createDetails(game),
-    createRatingPanel(game, gameUrl),
+    createTilePoster(game, gameUrl),
+    createTileBody(game, gameUrl),
   )
 
   return card
 }
 
-function createPoster(game, gameUrl) {
+function createTilePoster(game, gameUrl) {
   const displayName = getDisplayName(game)
   const poster = document.createElement("a")
-  poster.className = "game-movie-poster"
+  poster.className = "game-tile-poster"
   poster.href = gameUrl
   poster.setAttribute("aria-label", `${TEXT.openGame}: ${displayName}`)
 
@@ -93,109 +159,36 @@ function createPoster(game, gameUrl) {
   return poster
 }
 
-function createDetails(game) {
+function createTileBody(game, gameUrl) {
   const displayName = getDisplayName(game)
-  const details = document.createElement("div")
-  details.className = "game-movie-details"
+  const body = document.createElement("div")
+  body.className = "game-tile-body"
 
   const title = document.createElement("h3")
-  title.className = "game-movie-title"
+  title.className = "game-tile-title"
   title.textContent = displayName
 
-  const meta = document.createElement("div")
-  meta.className = "game-movie-meta"
-  meta.append(
-    createMetaRow(TEXT.studio, "Looty"),
-    createMetaRow(TEXT.mode, getModeText(game)),
-  )
-
-  const synopsis = document.createElement("p")
-  synopsis.className = "game-movie-synopsis"
-  synopsis.textContent = getSynopsis(game)
-
   const tags = document.createElement("div")
-  tags.className = "game-movie-tags"
-  getTags(game).forEach((tag) => {
-    const chip = document.createElement("span")
-    chip.className = "game-movie-tag"
-    chip.textContent = tag
-    tags.append(chip)
-  })
+  tags.className = "game-tile-tags"
 
-  const slug = document.createElement("p")
-  slug.className = "game-movie-slug"
-  slug.textContent = `ID: ${game.slug}`
+  const type = document.createElement("span")
+  type.className = "game-tile-tag"
+  type.textContent = getGameTypeLabel(game.type)
 
-  details.append(title, meta, synopsis, tags, slug)
-  return details
-}
-
-function createMetaRow(label, value) {
-  const row = document.createElement("p")
-  row.className = "game-movie-meta-row"
-
-  const key = document.createElement("strong")
-  key.textContent = `${label}: `
-
-  const text = document.createElement("span")
-  text.textContent = value
-
-  row.append(key, text)
-  return row
-}
-
-function createRatingPanel(game, gameUrl) {
-  const panel = document.createElement("div")
-  panel.className = "game-movie-side"
-
-  const rating = document.createElement("div")
-  rating.className = "game-movie-rating"
+  const rating = document.createElement("span")
+  rating.className = "game-tile-rating"
+  rating.textContent = getRating(game)
   rating.setAttribute("aria-label", `${TEXT.rating}: ${getRating(game)}`)
 
-  const value = document.createElement("span")
-  value.className = "game-movie-rating-value"
-  value.textContent = getRating(game)
+  tags.append(type, rating)
 
-  const label = document.createElement("span")
-  label.className = "game-movie-rating-label"
-  label.textContent = TEXT.rating
+  const action = document.createElement("a")
+  action.className = "game-tile-play"
+  action.href = gameUrl
+  action.textContent = TEXT.play
 
-  rating.append(value, label)
-
-  const playLink = document.createElement("a")
-  playLink.className = "game-movie-play"
-  playLink.href = gameUrl
-  playLink.textContent = TEXT.play
-
-  panel.append(rating, playLink)
-  return panel
-}
-
-function getModeText(game) {
-  const type = getGameTypeLabel(game.type)
-  return game.supports_live ? `${type}, Live` : type
-}
-
-function getTags(game) {
-  const tags = [getGameTypeLabel(game.type), TEXT.featured]
-
-  if (game.supports_live) {
-    tags.push("Live")
-  }
-
-  return [...new Set(tags.filter(Boolean))]
-}
-
-function getSynopsis(game) {
-  if (game.slug === "demo-slot") {
-    return "A quick slot demo for testing Looty game launches and reward flow presentation."
-  }
-
-  if (game.slug === "lord-of-gomoku") {
-    return "A focused board strategy game built around clean decisions, fast rounds, and sharp tactical pressure."
-  }
-
-  return "A featured Looty game selected for quick play, clear rules, and replayable sessions."
+  body.append(title, tags, action)
+  return body
 }
 
 function getRating(game) {
@@ -208,6 +201,18 @@ function getRating(game) {
 
 function getGameUrl(game) {
   return game.url || buildGameUrl(game.slug)
+}
+
+function getCategoryCount(games, type) {
+  if (type === "all") {
+    return games.length
+  }
+
+  if (type === "live") {
+    return games.filter((game) => game.supports_live).length
+  }
+
+  return games.filter((game) => game.type === type).length
 }
 
 function getDisplayName(game) {
