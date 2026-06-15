@@ -8,7 +8,9 @@ export function renderLobby() {
           </a>
         </header>
 
-        <section class="hero" id="hero" aria-label="Looty hero image"></section>
+        <section class="hero" aria-label="Looty hero image">
+          <img class="hero-image" src="/hero/looty-hero-main.webp" alt="" loading="eager" decoding="async">
+        </section>
 
         <section class="content" id="gamesSection">
           <div class="section-head">

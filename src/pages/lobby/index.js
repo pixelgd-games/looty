@@ -1,7 +1,6 @@
 import { fetchPublicGames } from "./data.js"
 import { getLobbyElements } from "./dom.js"
 import { renderGameGrid, renderGameGridError } from "./game-grid.js"
-import { renderLobbyHero } from "./hero.js"
 import { renderLobby } from "./lobby.js"
 import { ERROR_CODES, showErrorModal } from "../../ui/error-modal.js"
 
@@ -11,8 +10,6 @@ export async function initLobbyPage(appRoot) {
   appRoot.innerHTML = renderLobby()
 
   const elements = getLobbyElements(appRoot)
-
-  renderLobbyHero(elements)
 
   try {
     const games = await fetchPublicGames()
