@@ -14,6 +14,7 @@ const TEXT = {
 }
 
 const DISPLAY_NAMES = {
+  "demo-slot": "Demo Slot",
   "lord-of-gomoku": "Lord of Gomoku",
 }
 
@@ -66,7 +67,7 @@ function createGameMovieCard(game) {
   const card = document.createElement("article")
   card.className = "game-movie-card"
 
-  const gameUrl = buildGameUrl(game.slug)
+  const gameUrl = getGameUrl(game)
   card.append(
     createPoster(game, gameUrl),
     createDetails(game),
@@ -186,6 +187,10 @@ function getTags(game) {
 }
 
 function getSynopsis(game) {
+  if (game.slug === "demo-slot") {
+    return "A quick slot demo for testing Looty game launches and reward flow presentation."
+  }
+
   if (game.slug === "lord-of-gomoku") {
     return "A focused board strategy game built around clean decisions, fast rounds, and sharp tactical pressure."
   }
@@ -199,6 +204,10 @@ function getRating(game) {
   }, 0)
 
   return (8.2 + (seed % 8) / 10).toFixed(1)
+}
+
+function getGameUrl(game) {
+  return game.url || buildGameUrl(game.slug)
 }
 
 function getDisplayName(game) {
