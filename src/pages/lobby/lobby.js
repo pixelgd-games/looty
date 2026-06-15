@@ -1,22 +1,3 @@
-const FEATURED_VIDEO = {
-  kicker: "GAMEPLAY LOOP",
-  title: "Lord of Gomoku",
-  meta: "Auto replay preview",
-  poster: "/hero/looty-hero-main.webp",
-  source: "",
-}
-
-const GAME_LEADERBOARD = {
-  game: "Lord of Gomoku",
-  entries: [
-    { rank: 1, player: "PixelGD", score: "98,420" },
-    { rank: 2, player: "Johnny", score: "87,910" },
-    { rank: 3, player: "Loot Runner", score: "76,300" },
-    { rank: 4, player: "Vault Seeker", score: "63,850" },
-    { rank: 5, player: "Board Master", score: "58,140" },
-  ],
-}
-
 export function renderLobby() {
   return `
     <div class="shell">
@@ -60,8 +41,6 @@ export function renderLobby() {
             <div class="grid" id="gameGrid"></div>
           </main>
         </div>
-
-        ${renderRightRail()}
       </div>
 
       <section class="auth-modal" id="authModal" aria-hidden="true" hidden>
@@ -84,72 +63,5 @@ export function renderLobby() {
         </div>
       </section>
     </div>
-  `
-}
-
-function renderRightRail() {
-  return `
-        <aside class="lobby-right-rail" aria-label="site highlights">
-          ${renderGameplayLoop()}
-          ${renderLeaderboard()}
-        </aside>
-  `
-}
-
-function renderGameplayLoop() {
-  return `
-          <section class="gameplay-panel" aria-label="featured gameplay video">
-            <div class="gameplay-media">
-              ${renderGameplayMedia()}
-              <div class="gameplay-scrim"></div>
-              <div class="gameplay-copy">
-                <p>${FEATURED_VIDEO.kicker}</p>
-                <h2>${FEATURED_VIDEO.title}</h2>
-                <span>${FEATURED_VIDEO.meta}</span>
-              </div>
-            </div>
-          </section>
-  `
-}
-
-function renderGameplayMedia() {
-  if (!FEATURED_VIDEO.source) {
-    return `
-              <div class="gameplay-loop-fallback" style="--gameplay-poster:url('${FEATURED_VIDEO.poster}')">
-                <span class="gameplay-token token-a"></span>
-                <span class="gameplay-token token-b"></span>
-                <span class="gameplay-token token-c"></span>
-              </div>
-    `
-  }
-
-  return `
-              <video class="gameplay-video" autoplay muted loop playsinline poster="${FEATURED_VIDEO.poster}">
-                <source src="${FEATURED_VIDEO.source}" type="video/mp4">
-              </video>
-  `
-}
-
-function renderLeaderboard() {
-  return `
-          <section class="leaderboard-panel" aria-label="${GAME_LEADERBOARD.game} leaderboard">
-            <div class="rail-section-head">
-              <p class="section-kicker">GAME RANKING</p>
-              <h2 class="rail-title">${GAME_LEADERBOARD.game}</h2>
-            </div>
-            <ol class="leaderboard-list">
-              ${GAME_LEADERBOARD.entries.map(renderLeaderboardItem).join("")}
-            </ol>
-          </section>
-  `
-}
-
-function renderLeaderboardItem(item) {
-  return `
-              <li class="leaderboard-item">
-                <span class="leaderboard-rank">${item.rank}</span>
-                <span class="leaderboard-player">${item.player}</span>
-                <strong class="leaderboard-score">${item.score}</strong>
-              </li>
   `
 }
