@@ -9,7 +9,7 @@ const LOCAL_SHOWCASE_GAMES = [
     name: "Demo Slot",
     type: "slot",
     supports_live: false,
-    thumbnail: "/hero/looty-hero-main.webp",
+    thumbnail: "",
     created_at: null,
     sort_order: 999,
     url: "/game/demo-slot/",
