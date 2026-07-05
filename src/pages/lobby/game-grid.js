@@ -12,7 +12,6 @@ const TEXT = {
 }
 
 const DISPLAY_NAMES = {
-  "demo-slot": "Demo Slot",
   "lord-of-gomoku": "Lord of Gomoku",
 }
 
@@ -193,5 +192,5 @@ function containsCjk(value) {
 }
 
 function shouldShowThumbnail(game) {
-  return game.slug !== "demo-slot" && Boolean(game.thumbnail)
+  return Boolean(game.thumbnail)
 }

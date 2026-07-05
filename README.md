@@ -347,11 +347,6 @@ npm run smoke
 /game/<slug>/index.html
 ```
 
-例如目前 repo 內的 demo 頁：
-
-- 原始檔：`public/game/demo-slot/index.html`
-- 對外路徑：`/game/demo-slot/index.html`
-
 ## 前台會員狀態
 
 前台會員登入目前已停用，線上 Lobby 不應出現登入 / 註冊 modal、會員狀態列或餘額顯示。後續若要恢復會員功能，應重新設計前台入口與對應測試流程。
