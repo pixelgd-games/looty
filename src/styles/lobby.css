@@ -186,21 +186,32 @@ body{
   width:100%;
   aspect-ratio:3/4;
   overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
+  border:0;
   border-radius:18px;
   background:
     linear-gradient(180deg, rgba(235,255,61,.08) 0%, rgba(235,255,61,0) 32%),
     linear-gradient(160deg, rgba(35,55,39,.88) 0%, rgba(9,16,22,.96) 74%);
-  background-position:center;
-  background-size:cover;
   box-shadow:0 22px 40px rgba(0,0,0,.27);
   text-decoration:none;
-  transition:transform .18s ease, border-color .18s ease;
+  transition:transform .18s ease, box-shadow .18s ease;
+  isolation:isolate;
 }
 
 .game-tile-poster:hover{
   transform:translateY(-2px);
-  border-color:rgba(235,255,61,.32);
+  box-shadow:
+    0 24px 44px rgba(0,0,0,.3),
+    0 0 0 1px rgba(235,255,61,.2);
+}
+
+.game-tile-poster-image{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  transform:scale(1.006);
+  transform-origin:center;
 }
 
 .game-tile-poster.is-empty::before{

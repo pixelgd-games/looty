@@ -110,7 +110,13 @@ function createTilePoster(game, gameUrl) {
   poster.setAttribute("aria-label", `${TEXT.openGame}: ${displayName}`)
 
   if (shouldShowThumbnail(game)) {
-    poster.style.backgroundImage = `url("${game.thumbnail}")`
+    const image = document.createElement("img")
+    image.className = "game-tile-poster-image"
+    image.src = game.thumbnail
+    image.alt = ""
+    image.loading = "lazy"
+    image.decoding = "async"
+    poster.append(image)
   } else {
     poster.classList.add("is-empty")
   }
