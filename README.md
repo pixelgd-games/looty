@@ -101,7 +101,8 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 
 目前 Game Loader 的載入呈現方式是：
 
-- `iframe` 從一開始就固定滿版，避免 loading 消失時造成畫面位移
+- `iframe` 從一開始就視覺滿版，避免 loading 消失時造成畫面位移
+- 外層 document 保留原生 scroll，`#game` 用 sticky 滿版承接遊戲畫面，讓手機網址列有機會收合
 - 進入遊戲時保留全畫面 Loading overlay
 - overlay 顯示 `Looty`、loading ring 與 `Entering game...`
 - 遊戲 iframe 初次 load 後，overlay 會淡出再移除

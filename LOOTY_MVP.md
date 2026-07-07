@@ -40,13 +40,14 @@ Looty 第一階段的成功條件仍然很單純：
 
 ### 目前前台 UI 狀態
 
-截至 2026-07-07，目前首頁 UI 可理解為：
+截至 2026-07-08，目前首頁 UI 可理解為：
 
 - 前台不顯示登入 / 註冊 UI
 - Hero 已改為固定主視覺 banner
 - Lobby 直接顯示全部公開遊戲，不再顯示分類 tabs
 - 遊戲卡與整體背景已往黑色 / 黑綠漸層方向收斂
-- Game Loader 保留全畫面 Loading overlay，iframe 先滿版載入，overlay 在 iframe 初次 load 後淡出
+- Game Loader 保留全畫面 Loading overlay，iframe 先視覺滿版載入，overlay 在 iframe 初次 load 後淡出
+- Game Loader 外層 document 保留原生 scroll，透過 sticky 遊戲容器與 scroll handoff spacer 協助手機瀏覽器網址列收合
 
 ## 目前採用的 MVP 實作策略
 
