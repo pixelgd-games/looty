@@ -23,7 +23,7 @@ Looty 第一階段的成功條件仍然很單純：
 - `npm run build` 可成功輸出多頁靜態站
 - `npm run smoke` 可做最小本機 smoke check
 - Cloudflare Pages Git 自動部署已接到 `looty-git` 的 `main`
-- 前台會員登入 v1 已接上 Supabase auth 與 `ensure_my_player_v1`
+- 前台會員登入目前已從 Lobby 移除，MVP 先維持公開遊戲入口
 
 ## 目前已確認的前台改版策略
 
@@ -40,13 +40,13 @@ Looty 第一階段的成功條件仍然很單純：
 
 ### 目前前台 UI 狀態
 
-截至 2026-05-02，目前首頁 UI 可理解為：
+截至 2026-07-07，目前首頁 UI 可理解為：
 
-- Top bar 的 `登入 / 註冊` 目前改為開啟首頁會員彈跳視窗
-- `login` / `register` 已接上會員初始化第一版流程
+- 前台不顯示登入 / 註冊 UI
 - Hero 已改為固定主視覺 banner
 - Lobby 直接顯示全部公開遊戲，不再顯示分類 tabs
 - 遊戲卡與整體背景已往黑色 / 黑綠漸層方向收斂
+- Game Loader 保留全畫面 Loading overlay，iframe 先滿版載入，overlay 在 iframe 初次 load 後淡出
 
 ## 目前採用的 MVP 實作策略
 
@@ -56,6 +56,7 @@ Looty 第一階段的成功條件仍然很單純：
 - Lobby 與 Game Loader 都直接依賴 `public_games_v1`
 - Admin 直接對 `games` table 做 CRUD
 - Vite 只作為 build tool，不使用 React / Vue / Next.js
+- Game Loader 進入遊戲時保留 Looty loading overlay，不改成無提示
 
 ### 關於前台分類 UI
 
@@ -65,26 +66,17 @@ Looty 第一階段的成功條件仍然很單純：
 - 先不要用分類把少量內容切得很碎
 - 保留資料欄位，等遊戲數量變多後再重新打開分類 UI
 
-### 關於會員初始化 v1
+### 關於前台會員
 
-目前會員登入只完成最小閉環，不把責任攤到前端直寫資料表。
+目前前台會員登入已暫停，Lobby 不顯示登入 / 註冊、會員狀態或餘額。現階段 MVP 先聚焦公開遊戲入口、Game Loader 與 Admin 管理。
 
-目前流程是：
-
-- login 成功後呼叫 `supabase.auth.signInWithPassword()`
-- login 成功後呼叫 `supabase.rpc("ensure_my_player_v1")`
-- register 成功且有 session 時，呼叫 `supabase.rpc("ensure_my_player_v1")`
-- register 成功但沒有 session 時，顯示「請先驗證信箱後再登入」
-- login 後 top bar 會切成已登入狀態
-- logout 目前已有基礎流程
-
-目前採用 RPC 的原因是：
+若之後恢復會員功能，過去的 DB/RPC 方向仍可作為參考：
 
 - 前端不直接 `insert players` / `player_balances`
 - 會員初始化留在 DB 端處理，比較容易維持一致
 - 可以讓 RLS 與 `auth.uid()` 邏輯留在資料層
 
-目前會員初始化 v1 明確不包含：
+會員功能恢復前，以下仍不屬於目前 Lobby 範圍：
 
 - guest merge
 - `auth.users` trigger
@@ -92,13 +84,6 @@ Looty 第一階段的成功條件仍然很單純：
 - `/me` 完整會員中心
 - `displayName` 寫入 `players`
 - 餘額歷史 / 點數流水
-
-目前這一版的目標只有：
-
-- 可登入
-- 可註冊
-- 可建立或取得 `player`
-- 可建立或取得 `balance`
 
 ### 關於 Admin 的定位
 

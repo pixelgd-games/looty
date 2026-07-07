@@ -10,7 +10,7 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 
 ## 目前狀態
 
-截至 2026-05-02，目前 repo 的實作狀態如下：
+截至 2026-07-07，目前 repo 的實作狀態如下：
 
 - Lobby 直接讀取 Supabase 的 `public_games_v1`
 - Game Loader 直接用 `slug` 查 `public_games_v1`，並以 `launch_url` 載入遊戲
@@ -19,7 +19,7 @@ Looty 是一個用 **Vanilla JS + Vite** 做的多頁前端專案，負責三件
 - Admin 可管理 `name`、`slug`、`thumbnail`、`type`、`supports_live`、`published`、`launch_url`、`sort_order`
 - 前台 / Loader / Admin 已開始共用錯誤視窗與錯誤代碼
 - 專案輸出為靜態站，Cloudflare Pages 已接上 Git 自動部署
-- `npm run build` 已於 2026-05-02 再次驗證成功
+- `npm run build` / `npm run smoke` 已於 2026-07-07 再次驗證成功
 
 ## 最新前台改版前提
 
@@ -99,6 +99,14 @@ Lobby 由 [src/main.js](/D:/Studio/Project_Code/looty/src/main.js) 啟動，首�
 3. 取出 `launch_url`
 4. 以 `iframe` 載入遊戲
 
+目前 Game Loader 的載入呈現方式是：
+
+- `iframe` 從一開始就固定滿版，避免 loading 消失時造成畫面位移
+- 進入遊戲時保留全畫面 Loading overlay
+- overlay 顯示 `Looty`、loading ring 與 `Entering game...`
+- 遊戲 iframe 初次 load 後，overlay 會淡出再移除
+- 目前決策是先維持這個 overlay 版本，不改成無提示或透明提示
+
 Loader 的預期錯誤會用共用錯誤視窗呈現，不再用 uncaught error 表達：
 
 - `LOOTY-GAME-001`: 缺少 `slug`
@@ -127,7 +135,7 @@ DB 端曾規劃的會員骨架仍可作為後續恢復會員功能時的參考�
 - 回傳欄位：`player_id`、`auth_user_id`、`balance`
 - 權限：只保留 `authenticated`、`postgres`、`service_role` 可執行；`PUBLIC` / `anon` 已移除 `EXECUTE`
 
-前台登入 / 註冊流程目前是：
+若之後恢復前台會員，可參考過去流程：
 
 1. login 成功後呼叫 `supabase.auth.signInWithPassword()`
 2. login 成功後呼叫 `supabase.rpc("ensure_my_player_v1")`
