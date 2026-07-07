@@ -21,15 +21,62 @@
 
     .loader{
       position:fixed;
-      top:0;
-      left:0;
-      right:0;
+      inset:0;
       z-index:2;
-      padding:16px;
-      background:rgba(11,16,32,.94);
-      font-size:16px;
-      font-weight:700;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(235,255,61,.14) 0%, rgba(235,255,61,0) 28%),
+        linear-gradient(180deg, rgba(12,16,27,.98) 0%, rgba(7,10,18,.96) 100%);
       pointer-events:none;
+      opacity:1;
+      transition:opacity .28s ease, visibility .28s ease;
+    }
+
+    .loader.is-hidden{
+      opacity:0;
+      visibility:hidden;
+    }
+
+    .loader-card{
+      display:grid;
+      justify-items:center;
+      gap:12px;
+      color:#f7f8fc;
+      text-align:center;
+    }
+
+    .loader-brand{
+      color:#ebff3d;
+      font-size:30px;
+      font-weight:900;
+      letter-spacing:.03em;
+      line-height:1;
+      text-shadow:0 0 18px rgba(235,255,61,.18);
+    }
+
+    .loader-copy{
+      margin:0;
+      color:rgba(247,248,252,.74);
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+
+    .loader-ring{
+      width:34px;
+      height:34px;
+      border:3px solid rgba(235,255,61,.18);
+      border-top-color:#ebff3d;
+      border-radius:999px;
+      animation:loaderSpin .82s linear infinite;
+    }
+
+    @keyframes loaderSpin{
+      to{
+        transform:rotate(360deg);
+      }
     }
 
     .error{
@@ -58,7 +105,13 @@
 </head>
 
 <body>
-  <div id="loading" class="loader">Loading Game...</div>
+  <div id="loading" class="loader" role="status" aria-live="polite">
+    <div class="loader-card">
+      <div class="loader-brand">Looty</div>
+      <div class="loader-ring" aria-hidden="true"></div>
+      <p class="loader-copy">Entering game...</p>
+    </div>
+  </div>
   <div id="game"></div>
 
   <script type="module">
@@ -148,7 +201,12 @@
 
       iframe.onload = () => {
         const loadingEl = document.getElementById("loading")
-        if (loadingEl) loadingEl.remove()
+        if (!loadingEl) return
+
+        loadingEl.classList.add("is-hidden")
+        window.setTimeout(() => {
+          loadingEl.remove()
+        }, 320)
       }
 
       document.getElementById("game").appendChild(iframe)
