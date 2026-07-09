@@ -284,6 +284,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - Looty 目前主力使用 Supabase CLI，不使用 MCP 當主要操作方式。
 - MCP 權限暫不授權；如果未來要開，必須綁定 Looty 的 `project_ref=lsazydefvnuqglultqii`，不要拿同一個 MCP 給其他專案共用。
 - 要改 DB 前，先產 SQL migration 給使用者確認。
+- 不要留下未確認的 baseline / 大重建 migration 草稿；這類檔案容易被誤套用。
 - 不要拿 Aura 或其他專案的 Supabase CLI link 來操作 Looty。
 - Supabase CLI 登入 token 在這台 Windows 上是全域狀態，不是專案檔的一部分；不要只相信 profile 名稱。
 - Looty 遠端 Supabase 操作優先使用 `.\scripts\supabase-looty.cmd`，不要直接依賴全域 `supabase login`。
@@ -295,6 +296,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 2026-07-09 已用 Dashboard SQL Editor 清掉舊 `players`、`player_balances`、`ensure_my_player_v1()`。
 - 2026-07-09 已用 DB password 重新 link pooler；CLI 在使用正確 Looty token 時可讀寫 Looty DB。
 - 2026-07-09 已用 CLI 清掉未使用的 `access_whitelist`、`site_settings`。
+- 2026-07-09 已刪除未追蹤的 `20260709131000_baseline_core_schema.sql` 草稿；目前不保留 baseline migration。
 
 ## 開發與建置
 

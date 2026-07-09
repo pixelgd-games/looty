@@ -263,6 +263,7 @@ Guest 轉正式帳號時，要決定哪些資料合併。
 - `players`、`player_balances`、`ensure_my_player_v1` 是舊會員 / 舊餘額方向留下的資料結構，已先移除，避免跟正式錢包混在一起。
 - `access_whitelist`、`site_settings` 目前程式碼沒有使用，已移除。
 - Looty 目前以 Supabase CLI + migration 管理資料庫；MCP 暫不作為主要操作方式，也不要讓其他專案共用 Looty MCP。
+- 2026-07-09 已刪除未追蹤的 baseline migration 草稿；不要留下未確認的大重建 SQL 檔。
 - 新平台錢包不要直接沿用 `player_balances` 當正式錢包。
 - 新平台錢包應改成 `wallet_accounts` + `wallet_transactions`，並保留交易流水、局號、idempotency。
 - 如果之後真的需要玩家資料表，建議用 `player_accounts` 重新建立，不要直接復活舊 `players`。
@@ -429,6 +430,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 先 read-only 看 schema。
 - 不要直接改 production DB。
 - 要改 DB 時，先產 SQL migration，讓使用者確認後再執行。
+- 不要自行建立或保留 baseline / 大重建 migration，除非使用者明確同意。
 - 不要用其他專案的 Supabase CLI 預設登入操作 Looty。
 - `.env.supabase.local` 只放本機，不提交；內容需要 Looty 的 `SUPABASE_ACCESS_TOKEN`、`SUPABASE_PROJECT_ID`、`SUPABASE_DB_PASSWORD`。
 - 如果 CLI token 指到錯帳號，不要反覆叫使用者重登；先確認 `.env.supabase.local` 是否是 Looty token。

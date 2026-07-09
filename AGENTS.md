@@ -52,6 +52,7 @@
 - Looty 目前主力用 Supabase CLI + migration 管理 DB。
 - Supabase MCP 暫不授權、不作為主要操作方式，也不要給其他專案共用 Looty MCP。
 - 要改 DB 前，先產 SQL migration 給使用者確認。
+- 不要留下未確認的 baseline / 大重建 migration 草稿；這類檔案容易被誤套用。
 - `.env.supabase.local` 只放本機，不提交；範本是 `.env.supabase.local.example`。
 - 如果 `.env.supabase.local` 不存在，請使用者在本機建立；不要要求使用者把 token 或 DB password 貼到對話裡。
 - 不要在文件或程式碼裡提交 Supabase access token、service role key、DB password。
@@ -66,6 +67,8 @@
 - `public.games`
 - `public.admin_users`
 - `public.public_games_v1`
+
+目前 repo 不保留 baseline migration。未來 DB 改動用小步、可審查的 migration，不要一次重建整個 schema。
 
 不要復活舊的：
 
