@@ -1,5 +1,15 @@
 # Flash 系統定位說明
 
+這份文件只提供 **Flash 大系統背景與責任邊界**。
+
+AI / Codex 閱讀順序：
+
+1. 先讀 `README.md`，確認 Looty repo 目前實作。
+2. 再讀 `LOOTY_MVP.md`，確認 MVP 產品邊界。
+3. 最後讀本文件，理解 Looty 在 Flash 裡的位置。
+
+不要把本文件當作 Looty repo 的欄位、路由、部署或短期策略真相來源。
+
 本專案屬於 **Flash** 整體架構中的其中一個模組。
 
 Flash 不是單一程式，也不是單一網站。
