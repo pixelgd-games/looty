@@ -28,13 +28,33 @@ Looty MVP 要先把這條主路徑做穩：
 - Game Loader 已可從 `public_games_v1` 取 `launch_url` 並載入 iframe。
 - Game Loader 已有 loading overlay 與明確錯誤碼。
 - Admin Login 已可用 Google OAuth + `admin_users` 白名單。
+- Admin 頁面目前已有 Supabase session + `admin_users` 白名單保護，MVP 階段已足夠。
 - Admin 已可管理 `games` 基本上架資料。
 - Admin 已支援 `launch_url` 與 `sort_order`。
 - Admin 列表已避免用資料字串拼 HTML。
 - `launch_url` 已集中做格式檢查，只接受 `http(s)` 與 `/` 開頭站內路徑。
 - 前台會員登入已從 Lobby 移除。
 - Cloudflare Pages Git 自動部署已接到 `looty-git` 的 `main`。
+- 2026-07-09 已確認 `looty-git.pages.dev` production 可載入，Cloudflare 帳號為 `pixelgd.games@gmail.com`。
+- Cloudflare env vars 已指向 Looty Supabase `lsazydefvnuqglultqii`。
 - `npm run build` 可成功輸出多頁靜態站。
+
+## 目前工作方向
+
+目前不是重做架構或補大型功能的階段。MVP 主路徑已經可用，接下來先以現有 Cloudflare Pages 網址和電腦版 Admin 驗證實際內容。
+
+同時要先把平台與遊戲責任邊界整理清楚。未來會有兩種方向：外部遊戲接進 Looty、Looty 自己的遊戲接到外部平台。帳號、Guest、錢包、game session、Gateway 的分工要先在文件裡定好，不要等開始寫功能才混在一起。
+
+現在主要要做：
+
+1. 用 Admin 上架 / 下架 / 編輯遊戲資料。
+2. 確認 Lobby 能看到公開遊戲。
+3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
+4. 套用已確認的 `20260709170000_create_platform_account_wallet_core.sql`，建立平台帳號、錢包、交易流水與 session 骨架。
+5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的責任邊界。
+6. 有具體問題時再針對該問題修正。
+
+現在不要主動切正式網域、重做 Admin、恢復會員、加錢包或把 Flash 兄弟模組接進來。
 
 ## 目前前台策略
 
@@ -65,6 +85,12 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 
 現階段不要把 Admin 做成完整營運系統。
 
+目前 Admin 已經需要 Supabase Google OAuth 登入，並會檢查 `admin_users` 白名單。這個保護在 MVP 階段已足夠，不需要為了 MVP 先加 Cloudflare Access，也不需要立刻把 `admin_users` 改成 auth user id。
+
+目前 Admin 以電腦版可用為準，已能完成遊戲上架、下架、新增、編輯、刪除與排序等核心管理操作。手機版優化不是目前待辦，等實際需要再處理。
+
+目前可先使用 Cloudflare Pages 現有網址，不需要先更換或綁定正式網域。正式網域與舊 Direct Upload Pages 退場方式，等確定要正式營運前再決定。
+
 ## 目前不做
 
 以下不是 MVP blocker：
@@ -77,6 +103,9 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 - 排行榜。
 - 官方挑戰系統。
 - 複雜營運後台 UI。
+- Admin 手機版優化。
+- 正式網域切換。
+- 舊 Direct Upload Pages 退場。
 - 幣流 / ledger / settlement。
 - Aura / Hype5 / FuGhost / Spinnova 的正式深度整合。
 
@@ -98,14 +127,15 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 - 不要回頭加本地 `enabled-games` 白名單。
 - 不要把遊戲可見性拆成多份設定。
 
-## 下一步優先順序
+## 未來可改善
 
-1. 設定 Cloudflare Access 保護 `/admin/*`。
-2. 把 `admin_users` 從 email 白名單升級為 auth user id。
-3. 補 Admin 基本排版與手機版可用性。
-4. 決定正式網域與舊 Direct Upload Pages 的退場方式。
-5. 視需要擴充 automated tests。
-6. 若要恢復會員功能，先設計 `/me` 或會員中心骨架。
+以下是待辦方向，不代表現在必須立刻施工：
+
+1. 視需要擴充 automated tests。
+2. 視需要把 `admin_users` 從 email 白名單升級為 auth user id。
+3. 視安全需求再評估 Cloudflare Access 保護 `/admin/*`。
+4. 若要恢復會員功能，先設計 `/me` 或會員中心骨架。
+5. 正式營運前，再決定正式網域與舊 Direct Upload Pages 的退場方式。
 
 ## 給 AI 的提醒
 

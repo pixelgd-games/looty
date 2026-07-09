@@ -1,215 +1,292 @@
 # Looty Game / Platform Integration Guide
 
 這份文件只給 AI / Codex 讀。
-用途是讓未來做遊戲、接遊戲、接平台的 AI 先理解 Looty 的接入準則。
+用途是讓未來做遊戲、接遊戲、接平台的 AI 先理解 Looty 的責任邊界與接入準則。
 
 它不是對外文件，也不是已完成實作說明。
 目前是架構準則與決策草案，部分內容尚未實作。
 
 日期：2026-07-09。
 
-## 先讀這段
+## 一句話結論
 
-Looty 要把「平台」和「遊戲」責任切清楚。
+Looty 是平台錢包與玩家帳號管理者。
 
-平台負責玩家身份、登入、錢包、交易紀錄、遊戲 session、營運資料。
-遊戲負責畫面、玩法、局號、下注結果、派獎結果。
+玩家帳號由 Looty 平台統一管理；遊戲只接平台發的 session / launch token，不自己登入、不自己記錢、不自己改餘額。
 
-遊戲不要自己登入玩家，也不要直接改玩家餘額。
+目前重點不是立刻實作會員或錢包，而是先把平台、遊戲、帳號、錢包、Game Gateway、外部平台接入的責任分清楚。
 
-## 給做遊戲的 AI
+## 現階段不要做
 
-如果你是來做一款要接進 Looty 的遊戲，請遵守以下規則。
+現階段不要因為看到本文件，就直接新增玩家表、錢包表、會員中心、Gateway 或 Supinova 整合。
 
-遊戲可以做：
+要改 DB 時，仍然先產小 SQL migration 給使用者確認。
 
-- 遊戲畫面
-- 遊戲規則
-- 局號 / round
-- 下注操作
-- 結果計算
-- 派獎結果
-- 呼叫平台提供的錢包介面
+不要復活舊的：
 
-遊戲不要做：
+- `players`
+- `player_balances`
+- `access_whitelist`
+- `site_settings`
+- `ensure_my_player_v1()`
 
-- 自己做玩家登入
-- 自己保存正式玩家帳號
-- 直接讀寫 Supabase auth user
-- 直接更新玩家餘額
-- 直接寫 `wallet_accounts` 或 `wallet_transactions`
-- 保存玩家 email、Google 帳號、手機或真實身份
-- 自己決定玩家能不能提款、領 bonus、使用正式錢包
+## 責任分工
 
-遊戲應該只認平台給的 session。
+### Looty Platform
+
+Looty Platform 是平台層，負責：
+
+- 玩家身份。
+- Guest / registered 帳號。
+- Supabase Auth 對應。
+- 建立與管理 `player_accounts`。
+- 建立與管理平台錢包。
+- 建立 game session。
+- 發 launch token。
+- 管理餘額、交易流水、idempotency。
+- Admin 遊戲上架資料。
+- 公開遊戲列表。
+- 查帳與安全控管。
+
+Looty Platform 不負責：
+
+- 遊戲畫面。
+- 遊戲動畫、音效與主要玩法前端。
+- 一般遊戲最終規則裁決。
+- 博奕機率與結果裁決。
+- 即時多人房間同步。
+- 第三方平台自己的玩家帳號與錢包。
+
+### Game
+
+Game 是遊戲本體，負責：
+
+- 顯示遊戲。
+- 遊戲畫面與互動。
+- 遊戲玩法。
+- 局號 / round。
+- 接收平台給的 `launch_token`。
+- 回報下注 / 派彩 / 退款 / 結算事件。
+- 顯示平台回傳的餘額與結果。
+
+Game 不負責：
+
+- 玩家登入。
+- 建立 Guest。
+- 保存正式玩家帳號。
+- 保存玩家 email、Google 帳號、手機或真實身份。
+- 直接讀寫 Supabase Auth。
+- 直接寫 Looty 的 Supabase。
+- 直接寫 `player_accounts`、`wallet_accounts`、`wallet_transactions`。
+- 直接更新玩家餘額。
+- 決定玩家能不能提款、領 bonus 或使用正式錢包。
+
+### Game Gateway
+
+Game Gateway 是平台與遊戲之間的轉接層，負責：
+
+- 驗證 launch token / session。
+- 把遊戲的下注、派彩、退款、rollback 請求轉成平台可處理的格式。
+- 對接 Looty wallet API 或第三方平台 wallet API。
+- 隔離不同遊戲、不同外部平台的 API 差異。
+- 避免遊戲直接依賴 Looty DB、Supabase Auth 或 Supinova。
+
+Game Gateway 的重點是隔離責任，不是把所有遊戲邏輯搬進 Looty。
+
+### Wallet Interface
+
+Wallet Interface 是錢包抽象介面，負責固定錢包語意：
+
+- 查餘額。
+- 扣款下注。
+- 派彩入帳。
+- 退款 / rollback。
+- 關閉局號。
+
+它後面第一階段可以接 Looty 同一個 Supabase 裡的 wallet tables。
+未來如果接 Supinova 或第三方平台 wallet API，應該改 adapter，不應讓遊戲重寫。
+
+## 帳號設計
+
+### 帳號類型
+
+玩家帳號分兩種：
+
+- Guest / 匿名玩家。
+- Registered / 正式帳號。
+
+Guest 可以先玩，後面可以升級成正式帳號。
+
+不要讓遊戲自己建立 Guest。
+Guest 應該由 Looty Platform 建立，之後對應到 `player_accounts`。
+
+正式帳號使用 Supabase Auth，例如：
+
+- Google。
+- Email OTP。
+- Email / password。
+
+登入後也對應到同一套 `player_accounts`。
+
+### Guest 升級正式帳號
+
+Guest 轉正式帳號時，不要換一個全新玩家。
+
+正確方向是把原本的 `player_accounts` 接到正式 Supabase Auth user 上。
+
+可以合併：
+
+- 遊戲進度。
+- 收藏。
+- 任務狀態。
+- 非真金流體驗幣紀錄。
+
+要小心：
+
+- 真錢錢包不要亂 merge。
+- bonus 不要重複領。
+- 如果 email 已經有舊帳號，要決定是合併、忽略，還是讓玩家選。
+
+### player_accounts 方向
 
 ```text
-Looty Platform
-  -> create_game_session
-    -> launch_token
-      -> Game
+player_accounts
+- id
+- auth_user_id
+- account_type: guest / registered
+- display_name
+- status
+- created_at
+- upgraded_at
 ```
 
-遊戲啟動後，應透過平台或 Game Gateway 提供的 API 做這些事：
+說明：
+
+- `auth_user_id` 對應 Supabase Auth user。
+- Guest 可以先沒有正式登入身份，但仍應有 `player_accounts`。
+- Guest 升級 registered 時，應更新同一筆 `player_accounts`，不是新增一個完全無關玩家。
+
+## 錢包設計
+
+### 核心結論
+
+Looty 使用平台錢包。
+
+我們不是讓每個遊戲自己有錢包，也不是讓遊戲直接存一個自己的 balance。
+
+錢包放在 Looty Platform 這邊：
+
+- 遊戲不能直接改玩家餘額。
+- 遊戲要下注、派彩、退款，都要走平台後端 / DB RPC / API。
+- 錢包一定要有流水，不只存一個 `balance` 數字。
+- `balance` 可以作為目前餘額欄位，但交易真相必須能從 `wallet_transactions` 查到。
+
+### 錢包帳戶
+
+第一版方向是玩家在平台有 wallet account。
+
+可以先理解成：
 
 ```text
-wallet_get_balance
-wallet_debit
-wallet_credit
-wallet_rollback
-close_game_round
+player_account
+  -> wallet_account by currency
 ```
 
-如果正式 Wallet API 還沒實作，遊戲可以先做 mock adapter。
-但 mock adapter 的函式名稱、參數概念、回傳格式要盡量貼近正式介面，避免之後重寫。
+同一個 `player_account_id + currency` 通常只會有一個 active wallet account。
 
-## 給接平台的 AI
+如果未來要明確區分 demo / guest_credit / real，可以再加 `wallet_type` 或用額外欄位區分，但不要讓遊戲直接依賴這個內部設計。
 
-如果你是來把 Looty 接到第三方平台，或讓第三方遊戲接進 Looty，請先分清楚錢包在哪邊。
-
-### Looty 遊戲給別的平台用
+### wallet_accounts 方向
 
 ```text
-Third-party Platform
-  -> Looty Game Gateway
-    -> Looty Game
+wallet_accounts
+- id
+- player_account_id
+- currency
+- balance
+- locked_balance
+- status
+- created_at
+- updated_at
 ```
 
-這時錢包通常是第三方平台的。
-Looty Game Gateway 要把下注、派獎、rollback 轉成對方平台的錢包 API。
+說明：
 
-Looty Game 不應直接知道第三方平台的玩家隱私資料。
+- `balance` 是目前可用餘額。
+- `locked_balance` 可用於未結算、保留、凍結或之後的真金流場景。
+- 第一版如果還沒用到 `locked_balance`，也可以先保留設計方向，不一定立刻實作。
 
-### 第三方遊戲接進 Looty
+### wallet_transactions 方向
 
 ```text
-Looty Platform
-  -> Game Gateway
-    -> Third-party Game
+wallet_transactions
+- id
+- wallet_account_id
+- type: deposit / withdraw / bet / payout / refund / adjustment
+- amount
+- balance_before
+- balance_after
+- game_id
+- round_id
+- idempotency_key
+- metadata
+- created_at
 ```
 
-這時錢包是 Looty 的。
-第三方遊戲下注、派獎、rollback 都要走 Looty wallet API。
+說明：
 
-第三方遊戲不應直接寫 Looty 的資料庫。
+- 每一次下注、派彩、退款、調整，都要寫交易流水。
+- `bet` 通常扣款。
+- `payout` 通常入帳。
+- `refund` 用於取消、rollback 或退款。
+- `adjustment` 用於後台或系統調整。
+- `idempotency_key` 必須避免重送造成重複扣款或重複派彩。
+- `round_id` 用來對應遊戲局號。
+- `balance_before` / `balance_after` 用來查帳與除錯。
+- `metadata` 放遊戲或供應商回傳的補充資訊，不放玩家隱私資料。
 
-## 錢包決策
+### 轉帳與 ledger
 
-### 1. 目前先不要獨立接 Supinova
+第一版不先做完整銀行式 double-entry transfer。
 
-現在不建議把 Supinova 當成獨立錢包服務接進來。
-
-原因：
-
-- Looty 平台目前也用 Supabase。
-- Supinova 若也是另一個 Supabase，免費方案下會多一份專案、額度、同步與維護成本。
-- 錢包交易需要穩定、可回滾、可查帳；跨兩個免費 Supabase 專案會讓 MVP 變複雜。
-- 現階段還沒有真的第三方平台或高頻交易壓力，不需要先拆服務。
-
-目前建議：
+目前方向是：
 
 ```text
-Looty Platform
-  -> Game Gateway
-    -> Wallet Interface
-      -> Looty wallet tables in same Supabase
+wallet_account
+  + wallet_transactions
+  + idempotency_key
+  + round_id
 ```
 
-也就是先在 Looty 同一個 Supabase 裡做平台錢包，但資料表與 API 設計要像正式錢包。
+等之後需要正式 settlement、平台資金池、供應商結算或更嚴格審計，再升級成更完整的 ledger / transfer model。
 
-未來如果 Supinova 要接管，再換成：
+## 遊戲啟動流程
 
-```text
-Looty Platform
-  -> Game Gateway
-    -> Wallet Interface
-      -> Supinova API / Supinova DB
-```
-
-這樣遊戲端不用重寫。
-
-### 2. 錢包是平台責任，不是遊戲責任
-
-遊戲只能提出請求：
-
-- 查餘額
-- 扣款下注
-- 派獎入帳
-- 取消 / rollback
-- 關閉局號
-
-平台負責：
-
-- 玩家能不能玩
-- 餘額夠不夠
-- 扣款是否成功
-- 派獎是否入帳
-- 交易紀錄是否完整
-- 重送請求是否會重複扣款
-
-不要讓遊戲直接更新 `wallet_accounts.balance` 這類欄位。
-
-## 帳號與 Guest 決策
-
-### 1. 平台統一登入，遊戲不再登入一次
-
-玩家不管是正式帳號還是 Guest，都先在 Looty 平台取得身份。
-
-進遊戲時，平台建立 `game_session`，再發短效 `launch_token` 給遊戲。
+目前方向：
 
 ```text
 Player / Guest
   -> Looty Platform
-    -> create_game_session
-      -> launch_token
-        -> Game
+    -> ensure player_account
+    -> ensure wallet_account
+    -> create game_session
+    -> issue launch_token
+      -> Game
 ```
 
-遊戲只認 `launch_token`，不要拿 Supabase auth token，也不要知道玩家 email、Google 帳號或後台權限。
-
-### 2. Guest 是匿名玩家，不是沒有玩家
-
-Guest 應該是平台裡的一種玩家身份。
-
-建議方向：
+遊戲啟動後：
 
 ```text
-Guest = Supabase anonymous user + player_accounts row
-Registered = Supabase normal user + player_accounts row
+Game
+  -> report bet / payout / refund / close round
+    -> Game Gateway
+      -> Wallet Interface
+        -> Looty wallet API / DB RPC / backend API
 ```
 
-Guest 可以：
+遊戲只認 `launch_token`。
 
-- 看大廳
-- 試玩遊戲
-- 使用 demo balance 或 guest credit
-- 留短期進度
-- 之後升級成正式帳號
-
-Guest 不應該：
-
-- 提款
-- 真金流下注
-- 領正式優惠
-- 被視為永久可找回帳號
-- 直接跨裝置找回，除非升級成正式帳號
-
-### 3. Guest 升級正式帳號要有 merge 規則
-
-Guest 轉正式帳號時，要決定哪些資料合併。
-
-可以合併：
-
-- 遊戲進度
-- 收藏
-- 任務狀態
-- 非真金流體驗幣紀錄
-
-要小心：
-
-- 真錢錢包不要亂 merge
-- bonus 不要被重複領
-- 如果 email 已經有舊帳號，要決定是合併、忽略，還是讓玩家選
+遊戲不要拿 Supabase auth token，也不要知道玩家 email、Google 帳號、後台權限或真實身份。
 
 ## 建議遊戲收到的 session payload
 
@@ -221,8 +298,15 @@ Guest 轉正式帳號時，要決定哪些資料合併。
   "game_id": "...",
   "player_account_ref": "...",
   "account_type": "guest",
-  "wallet_mode": "guest_credit",
   "currency": "POINT"
+}
+```
+
+如果未來有 demo / guest_credit / real，可加：
+
+```json
+{
+  "wallet_mode": "guest_credit"
 }
 ```
 
@@ -235,9 +319,184 @@ Guest 轉正式帳號時，要決定哪些資料合併。
 - admin role
 - 真實身份資料
 
-## 建議資料模型
+## Game session / round 方向
 
-先不用一次做完整，但方向應該長這樣。
+Game session 是平台發給遊戲的啟動授權。
+
+遊戲不應直接拿 Supabase Auth session。遊戲應只拿短效 `launch_token`，再由 Gateway 或平台驗證。
+
+### game_sessions 方向
+
+```text
+game_sessions
+- id
+- player_account_id
+- wallet_account_id
+- game_id
+- launch_token_hash
+- account_type: guest / registered
+- currency
+- status
+- expires_at
+- created_at
+- closed_at
+```
+
+### game_rounds 方向
+
+```text
+game_rounds
+- id
+- game_session_id
+- game_id
+- round_id
+- status
+- bet_amount
+- payout_amount
+- refund_amount
+- started_at
+- settled_at
+```
+
+說明：
+
+- `launch_token` 不應明文長期保存，資料庫只保存 hash 或可驗證資訊。
+- `round_id` 要能對應到 `wallet_transactions.round_id`。
+- 每一局下注、派彩、退款都要能追到 session、game、round。
+
+## 建議 RPC / API
+
+平台或 Gateway 應提供固定介面：
+
+```text
+create_game_session
+wallet_get_balance
+wallet_bet
+wallet_payout
+wallet_refund
+close_game_round
+upgrade_guest_account
+```
+
+如果底層想用更通用命名，也可以對應成：
+
+```text
+wallet_debit
+wallet_credit
+wallet_rollback
+```
+
+但對遊戲語意來說，第一版建議文件與 API 保持接近：
+
+- `bet`
+- `payout`
+- `refund`
+
+重點：
+
+- bet / payout / refund 必須有 `idempotency_key`。
+- 同一個 `idempotency_key` 重送時，不能重複扣款或重複派彩。
+- refund / rollback 要能對應原本的 bet 或 round。
+- 遊戲端只能呼叫這些介面，不能直接寫錢包表。
+
+## 主要接入方向
+
+### Looty 自己的平台接自己的遊戲
+
+```text
+Looty Platform
+  -> Game Gateway
+    -> Looty Game
+```
+
+這是最乾淨的目標形狀：
+
+- Looty Platform 管玩家、session、錢包。
+- Looty Game 管畫面與玩法。
+- Game Gateway 管中間轉接。
+- Wallet Interface 管錢包呼叫語意。
+
+### 外部遊戲接進 Looty
+
+```text
+Looty Platform
+  -> Game Gateway
+    -> External Game
+```
+
+這種情境下：
+
+- Looty 負責玩家身份、game session、錢包與交易流水。
+- 外部遊戲只認 Looty 給的 session 或 launch token。
+- 外部遊戲透過 Looty 提供的 wallet API 請求下注、派彩、退款。
+- 外部遊戲不直接讀寫 Looty Supabase。
+- 外部遊戲不保存 Looty 玩家隱私資料。
+
+### Looty 遊戲接到外部平台
+
+```text
+External Platform
+  -> Looty Game Gateway
+    -> Looty Game
+```
+
+這種情境下：
+
+- 外部平台通常負責玩家身份與錢包。
+- Looty Game Gateway 負責把 Looty 遊戲的下注、派彩、退款轉成外部平台 API。
+- Looty Game 不直接知道外部平台的玩家隱私資料。
+- Looty Game 不直接寫外部平台錢包。
+- 如果外部平台有自己的 session/token，Gateway 負責轉成遊戲能理解的最小 session payload。
+
+## Supinova / Spinova
+
+目前結論：第一階段不要先接 Supinova 錢包。
+
+原因：
+
+- Looty 自己的平台和遊戲都還在整理責任邊界。
+- Looty 平台目前也用 Supabase。
+- Supabase 免費方案下，多接一套 Supabase / 外部錢包會更複雜。
+- 現階段還沒有真的第三方平台或高頻交易壓力，不需要先拆服務。
+- 先把 Looty 自己的平台錢包設計好，比先接外部錢包更重要。
+
+現在方向：
+
+```text
+Looty Platform
+  -> Game Gateway
+    -> Wallet Interface
+      -> Looty wallet tables in same Supabase
+```
+
+未來如果接 Supinova：
+
+```text
+Looty Platform
+  -> Game Gateway
+    -> Wallet Interface
+      -> Supinova adapter
+        -> Supinova API / Supinova DB
+```
+
+重點是用 adapter 對接，不讓遊戲直接依賴 Supinova。
+
+## 接入檢查清單
+
+新遊戲要接 Looty 前，至少確認：
+
+- 有唯一 `slug`。
+- 有可被 Loader 載入的 `launch_url`。
+- 能接受平台給的 session 或 launch token。
+- 不需要自己做玩家登入。
+- 不需要自己建立 Guest。
+- 不直接碰 Supabase auth token。
+- 不直接寫玩家資料表。
+- 不直接寫錢包資料表。
+- 每一局有 `round_id` 或等價局號。
+- 每一次下注、派彩、退款都有唯一 `idempotency_key` 或交易識別。
+- 可以區分 demo / guest / registered 的遊玩情境，但不要自己決定正式錢包權限。
+- iframe 內畫面能在手機全螢幕容器正常顯示。
 
 ## 目前 Supabase 現況
 
@@ -265,114 +524,10 @@ Guest 轉正式帳號時，要決定哪些資料合併。
 - Looty 目前以 Supabase CLI + migration 管理資料庫；MCP 暫不作為主要操作方式，也不要讓其他專案共用 Looty MCP。
 - 2026-07-09 已刪除未追蹤的 baseline migration 草稿；不要留下未確認的大重建 SQL 檔。
 - 新平台錢包不要直接沿用 `player_balances` 當正式錢包。
-- 新平台錢包應改成 `wallet_accounts` + `wallet_transactions`，並保留交易流水、局號、idempotency。
+- 新平台錢包應使用 `wallet_accounts` + `wallet_transactions`，並保留交易流水、局號、idempotency。
 - 如果之後真的需要玩家資料表，建議用 `player_accounts` 重新建立，不要直接復活舊 `players`。
-
-### player_accounts
-
-```text
-id
-auth_user_id
-account_type: guest / registered
-status
-created_at
-upgraded_at
-```
-
-### wallet_accounts
-
-```text
-id
-player_account_id
-wallet_type: demo / guest_credit / real
-currency
-balance
-status
-created_at
-```
-
-### wallet_transactions
-
-```text
-id
-player_account_id
-wallet_account_id
-game_session_id
-game_round_id
-type: debit / credit / rollback / adjustment
-amount
-currency
-idempotency_key
-balance_after
-status
-created_at
-```
-
-### game_sessions
-
-```text
-id
-player_account_id
-game_id
-account_type
-wallet_mode: demo / guest_credit / real
-launch_token_hash
-expires_at
-status
-created_at
-closed_at
-```
-
-### game_rounds
-
-```text
-id
-game_session_id
-player_account_id
-game_id
-round_ref
-status
-bet_amount
-win_amount
-started_at
-settled_at
-```
-
-## 建議 RPC / API
-
-平台或 Gateway 應提供這些固定介面：
-
-```text
-create_game_session
-wallet_get_balance
-wallet_debit
-wallet_credit
-wallet_rollback
-close_game_round
-upgrade_guest_account
-```
-
-重點：
-
-- `wallet_debit` 和 `wallet_credit` 必須有 `idempotency_key`。
-- 同一個 `idempotency_key` 重送時，不能重複扣款或重複派獎。
-- rollback 要能對應原本的交易。
-- 遊戲端只能呼叫這些介面，不能直接寫錢包表。
-
-## 接入檢查清單
-
-新遊戲要接 Looty 前，至少確認：
-
-- 有唯一 `slug`。
-- 有可被 Loader 載入的 `launch_url`。
-- 能接受平台給的 session 或 launch token。
-- 不需要自己做玩家登入。
-- 不直接碰 Supabase auth token。
-- 不直接寫錢包資料表。
-- 每一局有 `round_id` 或等價局號。
-- 每一次下注、派獎、rollback 都有唯一 `idempotency_key` 或交易識別。
-- 可以區分 demo、guest credit、real wallet。
-- iframe 內畫面能在手機全螢幕容器正常顯示。
+- 2026-07-10 已建立平台帳號 / 錢包核心 migration 草稿：`20260709170000_create_platform_account_wallet_core.sql`。
+- 這份 migration 草稿已由使用者確認方向，但尚未套用到遠端 Supabase。
 
 ## 尚未定案
 
@@ -383,17 +538,20 @@ upgrade_guest_account
 - Guest balance 是純 demo balance，還是可以有短期 guest credit。
 - Guest 升級正式帳號時，衝突資料要自動 merge 還是讓玩家選。
 - 正式帳號第一版登入方式：Google、email OTP、email/password，還是多種並存。
-- `wallet_accounts.balance` 是否只作快取，真相完全以 `wallet_transactions` 重算。
-- Supinova 未來是主錢包、審計工具、還是獨立 settlement service。
+- `wallet_accounts.balance` 是否只是目前餘額快取，或是否要完全以 `wallet_transactions` 重算。
+- 第一版是否立刻實作 `locked_balance`。
+- 第一版是否需要 `wallet_type`，或先用 `currency` + `account_type` 處理。
+- Supinova 未來是主錢包、審計工具，還是獨立 settlement service。
 - Game Gateway 第一版放在 Supabase RPC、Edge Function，還是外部 API server。
 
 ## 實作提醒
 
 - 不要先做完整會員中心再做遊戲 session；應先做最小可用的 `create_game_session`。
+- 目前可從已確認的 `20260709170000_create_platform_account_wallet_core.sql` 開始，先套平台帳號、錢包、交易流水、game session、game round 骨架。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
-- Admin 白名單之後應從 email 升級到 auth user id。
-- 錢包資料表要預留 `idempotency_key`、`round_id`、`transaction_id`，避免未來重做。
+- Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前 MVP blocker。
+- 錢包資料表要預留 `idempotency_key`、`round_id`、交易識別與查帳資訊，避免未來重做。
 
 ## Supabase 操作原則
 

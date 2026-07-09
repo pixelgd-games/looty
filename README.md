@@ -44,6 +44,38 @@ Looty 既有 MVP 尚未包含：
 - 前台 / Loader / Admin 共用錯誤視窗與 `LOOTY-*` 錯誤代碼。
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 
+## 目前工作方向
+
+目前 Looty 處在 MVP 可用後的整理與驗證階段，不是架構重做階段。
+
+現在的重點是把平台和遊戲的責任邊界先定清楚，方便未來外部遊戲接進 Looty，也方便 Looty 自己的遊戲接到外部平台。
+
+現在主要要做的是：
+
+1. 繼續使用目前 Cloudflare Pages 網址測試與整理內容。
+2. 用電腦版 Admin 管理遊戲上架資料。
+3. 確認玩家主路徑穩定：首頁看到遊戲 -> 點進 Loader -> 遊戲成功啟動。
+4. 文件先釐清 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
+5. 發現具體問題時，只修該問題，不順手擴大成會員、錢包、正式網域、Cloudflare Access 或大型 Admin 改版。
+
+責任方向：
+
+- Looty Platform 負責玩家身份、game session、平台錢包介面、交易規則與遊戲上架資料。
+- Game 負責畫面、玩法、局號、下注/派獎請求時機，不自己登入玩家，也不直接改錢包。
+- Game Gateway 負責平台和遊戲之間的 session、wallet API、第三方平台 API 轉接。
+- Wallet Interface 負責固定錢包語意，讓後面可以接 Looty wallet tables、Supinova 或第三方平台 wallet API，而不讓遊戲重寫。
+- 詳細規則看 `GAME_PLATFORM_INTEGRATION.md`。
+
+帳號與錢包方向：
+
+- Guest 由 Looty Platform 建立，不由遊戲建立，之後對應到 `player_accounts`。
+- 正式帳號走 Supabase Auth，登入後也對應同一套 `player_accounts`。
+- Guest 升級正式帳號時，應接回原本玩家資料，不要換成全新玩家。
+- 錢包是 Looty 平台錢包，不是每個遊戲自己一套錢包。
+- 錢包資料方向是 `wallet_accounts` + `wallet_transactions`，不能只存一個 balance。
+- 下注、派彩、退款都要走平台後端 / DB RPC / API，並用 `idempotency_key` 避免重複扣款或重複派彩。
+- 第一階段不先接 Supinova；未來如果要接，放在 Wallet Interface 後面的 adapter。
+
 ## 技術限制
 
 除非明確要求，不要改以下前提：
@@ -157,6 +189,8 @@ Admin games：
 
 - 直接操作 `games` table。
 - 可列出、建立、編輯、刪除遊戲。
+- 目前以電腦版後台為主，已能完成遊戲上架、下架、啟動網址、排序等核心管理操作。
+- Admin 手機版優化先不列為待辦，等實際需要再處理。
 - 遊戲列表用 DOM 建構，不用資料字串拼 `innerHTML`。
 - `launch_url` 顯示前會先正規化。
 - 刪除成功後局部更新列表，不整頁 reload。
@@ -298,6 +332,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 2026-07-09 已用 CLI 清掉未使用的 `access_whitelist`、`site_settings`。
 - 2026-07-09 已刪除未追蹤的 `20260709131000_baseline_core_schema.sql` 草稿；目前不保留 baseline migration。
 - 2026-07-09 已在本機建立 `.env.supabase.local` 並測試 `.\scripts\supabase-looty.cmd projects list` 成功看到 `Looty` / `lsazydefvnuqglultqii` / `linked: true`。
+- 2026-07-10 已建立 `20260709170000_create_platform_account_wallet_core.sql` migration 草稿，內容是平台帳號、錢包、交易流水、game session、game round 骨架；使用者已確認方向，但尚未套用到遠端 Supabase。
 
 ## 開發與建置
 
@@ -334,18 +369,38 @@ Smoke 目標：
 
 ## Cloudflare Pages
 
-目前已知部署模式：
+目前已知部署模式，已於 2026-07-09 在 Cloudflare Dashboard 確認：
 
+- Cloudflare account: `pixelgd.games@gmail.com`
 - Cloudflare Pages project: `looty-git`
 - GitHub repo: `pixelgd-games/looty`
 - Production branch: `main`
+- Automatic deployments: enabled
 - Root directory: 留空
 - Framework preset: `Vite`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Frontend env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Frontend env vars:
+  - `VITE_SUPABASE_URL`: 已設定，指向 Looty Supabase `lsazydefvnuqglultqii`
+  - `VITE_SUPABASE_ANON_KEY`: 已設定，不要把完整 key 寫進文件或對話
+- Production hostname: `looty-git.pages.dev`
+- Custom domains: 目前未設定
 
-舊的 Direct Upload Pages 專案先保留，不要直接覆蓋或刪除。
+目前可先使用 Cloudflare Pages 現有網址，不需要先更換或綁定正式網域。正式網域等確定要正式營運前再決定。
+
+舊的 Direct Upload Pages 專案先保留，不要直接覆蓋或刪除；退場方式也等正式營運前再決定。
+
+2026-07-09 production smoke check：
+
+- `https://looty-git.pages.dev/` 可載入。
+- Lobby 可從 Supabase 讀到公開遊戲。
+- `https://looty-git.pages.dev/game/?slug=color-guess` 可載入 Game Loader，iframe 指向 `https://color-guess-68b.pages.dev/`。
+- `/admin/*` 目前沒有 Cloudflare Access 攔截；Admin 保護由 Looty 自己的 Supabase session + `admin_users` 白名單負責。
+
+Cloudflare 操作提醒：
+
+- 這台 Chrome 可能有多個 Cloudflare 帳號；操作 Looty 前先確認左上角帳號是 `pixelgd.games@gmail.com`。
+- 不要在未確認帳號時修改 Pages、Workers、Zero Trust 或環境變數。
 
 若遊戲本體放在 `public/game/<slug>/index.html`，建置後對外路徑是：
 
@@ -353,11 +408,15 @@ Smoke 目標：
 /game/<slug>/index.html
 ```
 
-## Cloudflare Access 待設定
+## Cloudflare Access 選用加固
 
-後台 `/admin/*` 之後應加 Cloudflare Access，作為進入 Admin HTML 前的第一層保護。
+目前 Admin 已有 Supabase Google OAuth + `admin_users` email 白名單保護，MVP 階段已足夠。
 
-預計：
+Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。之後如果要再加一層入口保護，可以把 `/admin/*` 納入 Cloudflare Access，讓使用者進入 Admin HTML 前先通過 Cloudflare。
+
+2026-07-09 已確認 `looty-git.pages.dev/admin/*` 目前沒有 Cloudflare Access 保護，這是預期狀態。
+
+若要設定，預計：
 
 - hostname: `looty-git.pages.dev`
 - path: `/admin/*`
@@ -365,16 +424,18 @@ Smoke 目標：
 - allowed Google emails:
   - `pixelgd.games@gmail.com`
   - `johnnyli1226@gmail.com`
-- 前端 `admin_users` 白名單檢查保留，作為第二層保護。
+- 前端 `admin_users` 白名單檢查保留，作為應用層保護。
 
-正式網域綁定後，要把正式網域的 `/admin/*` 也納入保護。
+正式網域綁定後，如果有啟用 Cloudflare Access，也要把正式網域的 `/admin/*` 納入保護。
 
-## 已知待補
+## 未來可改善
 
-- `admin_users` 仍以 email 白名單判斷，尚未升級為 auth user id。
-- Admin UI 還是輕量原始 HTML，尚未做完整排版與手機版優化。
+以下是後續可改善事項，不是目前 MVP blocker：
+
+- `admin_users` 仍以 email 白名單判斷；目前可用，未來可視需要升級為 auth user id。
 - 前台會員登入停用，尚未設計新的 `/me` 或會員中心。
-- Cloudflare Access 尚待設定。
+- Cloudflare Access 未啟用；目前不是 MVP blocker，可視安全需求再加。
+- 正式網域與舊 Direct Upload Pages 退場方式等正式營運前再決定。
 - Automated tests 還不完整。
 
 ## 交接提醒
