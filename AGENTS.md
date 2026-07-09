@@ -40,6 +40,7 @@
 - 不恢復前台會員登入 UI，除非先重新設計會員入口。
 - 不把 Flash 兄弟模組責任硬塞進 Looty。
 - 遊戲不要自己登入玩家，也不要直接改玩家餘額。
+- 在 Looty repo 任務中不要修改任何遊戲本體 repo；只有使用者明確指定某一款遊戲並切到該遊戲 repo 時，才處理遊戲本體接入。
 
 ## Supabase 規則
 
@@ -93,6 +94,7 @@
 - Game session / wallet RPC 已建立，目前只開給 `service_role`，不要從前端直接呼叫。
 - Supabase Edge Function `looty-gateway` 已部署，支援 `create-session` 與第一版 wallet endpoints。
 - Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session，並把 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url` 傳給 iframe。
+- 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 
 ## 最近確認
 

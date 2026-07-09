@@ -27,6 +27,7 @@ Looty 目前負責：
 Looty 目前不負責：
 
 - 遊戲本體玩法與前端表現。
+- 修改已上架遊戲的本體 repo。
 - 即時多人同步。
 - 博奕結果裁決 / RNG。
 - 完整會員中心 UI。
@@ -34,6 +35,8 @@ Looty 目前不負責：
 - 讓前端直接寫玩家或錢包資料。
 
 遊戲本體不應自己登入玩家，也不應直接改玩家餘額。細節看 `GAME_PLATFORM_INTEGRATION.md`。
+
+Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 Loader 收到 Looty session 參數；遊戲是否要讀取這些參數，必須等使用者明確指定該遊戲接入時，再到該遊戲 repo 處理。
 
 ## 目前狀態
 
@@ -44,6 +47,7 @@ Looty 目前不負責：
 - Auth / Database / View 走 Looty Supabase：`lsazydefvnuqglultqii`。
 - Lobby 直接讀 `public_games_v1`。
 - Game Loader 用 `slug` 查 `public_games_v1`，先呼叫 `looty-gateway/create-session`，再把 Looty session 參數附加到 iframe `launch_url`。
+- 目前沒有修改任何已上架遊戲本體；舊遊戲忽略 Looty query params 也應可照常顯示。
 - 前台會員登入已從 Lobby 移除，首頁維持純公開遊戲入口。
 - Admin 使用 Google OAuth + `admin_users` email 白名單。
 - Admin 可管理 `games` 的基本上架欄位。
@@ -65,6 +69,8 @@ Looty 目前不負責：
 3. 讓文件清楚分出 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
 4. 讓遊戲接入 AI 依 `GAME_PLATFORM_INTEGRATION.md` 讀取 Looty session 參數。
 5. 不先做完整會員中心、不恢復前台登入 UI、不接 Supinova、不切正式網域。
+
+如果要改遊戲本體，必須是使用者明確指定某一款遊戲，並切到該遊戲 repo 後再做；Looty repo 不代替遊戲 repo 實作玩法、下注、派彩或 UI。
 
 ## 路由
 
@@ -523,3 +529,4 @@ Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。�
 4. 調整公開規則時，優先改 DB view / policy，不要加本地硬編碼。
 5. 改部署前，先保住目前可用的靜態輸出流程。
 6. 做遊戲接入前，先讀 `GAME_PLATFORM_INTEGRATION.md`。
+7. 不要在 Looty repo 任務中直接修改遊戲本體 repo。

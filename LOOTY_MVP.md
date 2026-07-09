@@ -42,6 +42,7 @@ Looty MVP 要先把這條主路徑做穩：
 - 2026-07-10 已套用第一版 game session / wallet RPC，目前只開給 `service_role`。
 - 2026-07-10 已部署 Supabase Edge Function `looty-gateway`，支援 `create-session` 與第一版 wallet endpoints。
 - 2026-07-10 Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session 並把 Looty session 參數附加到 iframe URL。
+- 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -60,6 +61,7 @@ Looty MVP 要先把這條主路徑做穩：
 6. 有具體問題時再針對該問題修正。
 
 現在不要主動切正式網域、重做 Admin、恢復會員中心 UI、做完整錢包功能或把 Flash 兄弟模組接進來。
+也不要在 Looty repo 任務中直接修改遊戲本體 repo。
 
 ## 目前前台策略
 

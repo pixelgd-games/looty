@@ -18,15 +18,39 @@ Looty 是平台入口與玩家平台層。
 
 遊戲只應接 Looty 給的啟動入口、session 或 launch token。遊戲不登入玩家、不保存玩家身份、不直接寫 Looty Supabase、不直接改玩家餘額。
 
+## 絕對邊界：Looty AI 不改遊戲本體
+
+在 Looty repo 的任務中，AI 只能改 Looty 平台本身：
+
+- Lobby。
+- Game Loader。
+- Admin。
+- Looty Gateway。
+- Looty DB migration / RPC。
+- Looty 文件。
+
+不要從 Looty 任務直接修改任何遊戲本體 repo。
+
+目前已上架的遊戲本體都沒有因為 Loader 接 session 而被修改：
+
+- `color-guess`
+- `lord-of-gomoku`
+- `monster-lab-dev`
+
+Looty 現在只是在 iframe URL 旁邊多帶 Looty session 參數。舊遊戲如果不讀這些參數，仍應照常顯示。
+
+只有在使用者明確切換到某一個遊戲 repo，並要求「這款遊戲接 Looty wallet / session」時，遊戲 AI 才能改該遊戲本體。
+
 ## 目前接入現況
 
-現在已完成的是 **公開遊戲啟動流程**：
+現在已完成的是 **公開遊戲啟動 + Looty session 建立流程**：
 
 ```text
 Lobby
   -> public_games_v1
   -> /game/?slug=<slug>
-  -> public_games_v1.launch_url
+  -> looty-gateway/create-session
+  -> public_games_v1.launch_url + Looty query params
   -> iframe 載入遊戲
 ```
 
@@ -51,6 +75,8 @@ Supabase Edge Function `looty-gateway` 已部署，負責建立 session 與轉�
 
 - 遊戲入口要能被 URL 直接打開。
 - 遊戲要能被 iframe 載入。
+- 不要因為 Looty 已帶 session 參數，就擅自改遊戲下注或派彩流程。
+- 只有使用者明確要求接入該遊戲時，才開始改遊戲本體。
 - 不要在遊戲內做 Looty 玩家登入。
 - 不要在遊戲內建立 Guest。
 - 不要讀或保存 Supabase access token。
@@ -59,7 +85,8 @@ Supabase Edge Function `looty-gateway` 已部署，負責建立 session 與轉�
 - 不要直接寫 `player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 每一局要有自己的 `round_id` 或等價局號。
 - 下注、派彩、退款要能帶唯一 `idempotency_key`。
-- 等 Looty Gateway / 後端 API 接好後，再透過 API 回報下注、派彩、退款。
+- 如果只是舊遊戲維持 iframe 顯示，可以先忽略 Looty session 參數。
+- 如果要正式接 wallet，才透過 Looty Gateway 回報下注、派彩、退款。
 
 ## 責任分工
 
@@ -243,6 +270,14 @@ looty_gateway_url
 
 遊戲可以先只讀這些參數，不一定要立刻接錢包。舊遊戲如果忽略這些 query params，仍可照常顯示。
 
+遊戲 AI 接入時，建議先做最低限度支援：
+
+1. 從 URL 讀取 `looty_launch_token`。
+2. 從 URL 讀取 `looty_gateway_url`。
+3. 若缺少這兩個值，維持原本 demo / free-play 流程。
+4. 若存在這兩個值，才啟用 Looty wallet adapter。
+5. wallet adapter 只呼叫 Gateway，不直接碰 Supabase。
+
 啟動目標：
 
 ```text
@@ -402,6 +437,8 @@ Wallet endpoint 共通要求：
 - 缺必要參數會回 `400`。
 - 重送同一個 `idempotency_key` 不會重複扣款或重複派彩。
 
+遊戲端不得保存 `launch_token` 到長期 storage。可以放在執行中的記憶體狀態，重新整理頁面時由 Loader 重新建立 session。
+
 ## 建議 API / RPC
 
 DB 層第一版已建立：
@@ -533,6 +570,13 @@ Looty Platform
 - 每一次下注、派彩、退款都有唯一 `idempotency_key` 或交易識別。
 - 可以區分 demo / guest / registered 的遊玩情境，但不要自己決定正式錢包權限。
 
+已上架舊遊戲的原則：
+
+- 不需要為了 Loader session 立即改遊戲本體。
+- 先讓它們維持 iframe 可玩。
+- 要接錢包時，一次只挑一款遊戲改。
+- 改遊戲本體前，先確認該遊戲 repo 是乾淨工作區，並先讀該遊戲自己的 AI 文件。
+
 ## Supabase 現況
 
 目前 Looty 的 public schema 包含：
@@ -594,7 +638,8 @@ Looty Platform
 
 - 不要先做完整會員中心再做遊戲 session。
 - Loader 已接 `looty-gateway/create-session`。
-- 下一步是挑一個乾淨的遊戲 repo，正式接 `looty_launch_token` 與 wallet endpoints。
+- 不要在 Looty repo 任務中直接修改遊戲本體 repo。
+- 下一步若要接遊戲本體，必須由使用者明確指定哪一款遊戲，並切到該遊戲 repo 執行。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
 - Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前 MVP blocker。
