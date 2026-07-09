@@ -147,7 +147,7 @@ Looty Platform
 - 交易紀錄是否完整
 - 重送請求是否會重複扣款
 
-不要讓遊戲直接更新 `players.balance` 這類欄位。
+不要讓遊戲直接更新 `wallet_accounts.balance` 這類欄位。
 
 ## 帳號與 Guest 決策
 
@@ -174,8 +174,8 @@ Guest 應該是平台裡的一種玩家身份。
 建議方向：
 
 ```text
-Guest = Supabase anonymous user + players row
-Registered = Supabase normal user + players row
+Guest = Supabase anonymous user + player_accounts row
+Registered = Supabase normal user + player_accounts row
 ```
 
 Guest 可以：
@@ -219,7 +219,7 @@ Guest 轉正式帳號時，要決定哪些資料合併。
 {
   "session_id": "...",
   "game_id": "...",
-  "player_ref": "...",
+  "player_account_ref": "...",
   "account_type": "guest",
   "wallet_mode": "guest_credit",
   "currency": "POINT"
@@ -239,7 +239,35 @@ Guest 轉正式帳號時，要決定哪些資料合併。
 
 先不用一次做完整，但方向應該長這樣。
 
-### players
+## 目前 Supabase 現況
+
+讀取時間：2026-07-09。
+
+目前 Looty 的 public schema 已存在：
+
+- `games`
+- `public_games_v1`
+- `admin_users`
+
+2026-07-09 已從遠端 DB 移除：
+
+- `players`
+- `player_balances`
+- `access_whitelist`
+- `site_settings`
+- RPC: `ensure_my_player_v1`
+
+注意：
+
+- `games` / `public_games_v1` / `admin_users` 是目前前台與 Admin 正在使用的核心資料。
+- `players`、`player_balances`、`ensure_my_player_v1` 是舊會員 / 舊餘額方向留下的資料結構，已先移除，避免跟正式錢包混在一起。
+- `access_whitelist`、`site_settings` 目前程式碼沒有使用，已移除。
+- Looty 目前以 Supabase CLI + migration 管理資料庫；MCP 暫不作為主要操作方式，也不要讓其他專案共用 Looty MCP。
+- 新平台錢包不要直接沿用 `player_balances` 當正式錢包。
+- 新平台錢包應改成 `wallet_accounts` + `wallet_transactions`，並保留交易流水、局號、idempotency。
+- 如果之後真的需要玩家資料表，建議用 `player_accounts` 重新建立，不要直接復活舊 `players`。
+
+### player_accounts
 
 ```text
 id
@@ -254,7 +282,7 @@ upgraded_at
 
 ```text
 id
-player_id
+player_account_id
 wallet_type: demo / guest_credit / real
 currency
 balance
@@ -266,7 +294,7 @@ created_at
 
 ```text
 id
-player_id
+player_account_id
 wallet_account_id
 game_session_id
 game_round_id
@@ -283,7 +311,7 @@ created_at
 
 ```text
 id
-player_id
+player_account_id
 game_id
 account_type
 wallet_mode: demo / guest_credit / real
@@ -299,7 +327,7 @@ closed_at
 ```text
 id
 game_session_id
-player_id
+player_account_id
 game_id
 round_ref
 status
@@ -361,7 +389,7 @@ upgrade_guest_account
 ## 實作提醒
 
 - 不要先做完整會員中心再做遊戲 session；應先做最小可用的 `create_game_session`。
-- 不要讓前端直接 `insert players`、`wallet_accounts`、`wallet_transactions`。
+- 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
 - Admin 白名單之後應從 email 升級到 auth user id。
 - 錢包資料表要預留 `idempotency_key`、`round_id`、`transaction_id`，避免未來重做。
