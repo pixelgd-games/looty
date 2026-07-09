@@ -404,19 +404,16 @@ lsazydefvnuqglultqii
 
 AI 操作 Supabase 前必須先確認目前目標是 Looty，不是 Aura、Supinova 或其他專案。
 
-Looty 的 Supabase CLI profile 是：
-
-```text
-looty-pixelgd
-```
+注意：Supabase CLI 登入 token 在這台 Windows 上是全域狀態，不是專案檔的一部分。不要只相信 `--profile` 名稱或目前所在資料夾。
 
 確認方式：
 
 ```bash
-npx supabase --profile looty-pixelgd --workdir "D:\Studio\Project_Code\looty" projects list
+npx supabase --workdir "D:\Studio\Project_Code\looty" projects list
 ```
 
 結果中 `Looty` / `lsazydefvnuqglultqii` 應為 `linked: true`。
+如果只看到 `arua`，立刻停止；這代表目前 CLI token 不是 Looty 帳號。
 
 目前 Looty 專案內有 `.codex/config.toml`，設定了 project-scoped Supabase MCP：
 
@@ -430,6 +427,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 不要直接改 production DB。
 - 要改 DB 時，先產 SQL migration，讓使用者確認後再執行。
 - 不要用其他專案的 Supabase CLI 預設登入操作 Looty。
+- 如果 CLI token 指到錯帳號，先 `npx supabase logout --yes`，再用 `pixelgd.games@gmail.com` 重新登入。
 - 不要在文件或程式碼裡提交 Supabase access token、service role key、DB password。
 
 ## 參考資料

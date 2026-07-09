@@ -251,13 +251,13 @@ AI / Codex 操作 Supabase 時，先確認目標是 Looty，不要沿用其他�
 目前專案已有：
 
 - `supabase/config.toml`: Looty 的本地 Supabase CLI 骨架。
-- Supabase CLI profile: `looty-pixelgd`。
+- Looty 本地 Supabase link: `lsazydefvnuqglultqii`。
 - `.codex/config.toml`: Looty 專案限定的 Supabase MCP 設定，先保留 read-only 設定，但目前不授權啟用。
 
 確認 CLI 連到正確專案：
 
 ```bash
-npx supabase --profile looty-pixelgd --workdir "D:\Studio\Project_Code\looty" projects list
+npx supabase --workdir "D:\Studio\Project_Code\looty" projects list
 ```
 
 確認結果裡 `Looty` / `lsazydefvnuqglultqii` 應該是 `linked: true`。
@@ -275,11 +275,13 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - MCP 權限暫不授權；如果未來要開，必須綁定 Looty 的 `project_ref=lsazydefvnuqglultqii`，不要拿同一個 MCP 給其他專案共用。
 - 要改 DB 前，先產 SQL migration 給使用者確認。
 - 不要拿 Aura 或其他專案的 Supabase CLI link 來操作 Looty。
+- Supabase CLI 登入 token 在這台 Windows 上是全域狀態，不是專案檔的一部分；不要只相信 profile 名稱。
 - 如果 `projects list` 看不到 `Looty` / `lsazydefvnuqglultqii`，或只看到 `arua`，立刻停止；代表目前 CLI token 不是 Looty 帳號。
+- 遇到上面狀況時，先 `npx supabase logout --yes`，再用 `pixelgd.games@gmail.com` 重新 `npx supabase --output-format text login`。
 - Codex 目前 session 不一定會立刻載入新 MCP；通常需要重開 Codex session 後再授權 Supabase。
-- 若 MCP 工具沒有出現，可先用 `looty-pixelgd` CLI profile 做 read-only schema 檢查。
+- 若 MCP 工具沒有出現，可用 Supabase CLI 做 schema 檢查，但必須先確認 `projects list` 是 Looty。
 - 2026-07-09 已用 Dashboard SQL Editor 清掉舊 `players`、`player_balances`、`ensure_my_player_v1()`。
-- 2026-07-09 已用 DB password 重新 link pooler；`looty-pixelgd` profile 現在可用 CLI 讀寫 Looty DB。
+- 2026-07-09 已用 DB password 重新 link pooler；CLI 在登入正確 Looty 帳號時可讀寫 Looty DB。
 - 2026-07-09 已用 CLI 清掉未使用的 `access_whitelist`、`site_settings`。
 
 ## 開發與建置
