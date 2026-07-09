@@ -1,5 +1,5 @@
-import { supabase } from "/src/lib/supabaseClient.js"
-import { normalizeLaunchUrl } from "/src/lib/urls.js"
+import { supabase, supabaseFunctionsUrl } from "/src/lib/supabaseClient.js"
+import { appendQueryParams, normalizeLaunchUrl } from "/src/lib/urls.js"
 import { ERROR_CODES, showErrorModal } from "/src/ui/error-modal.js"
 
 const params = new URLSearchParams(location.search)
@@ -97,8 +97,46 @@ async function main() {
     return
   }
 
-  mountGameIframe(gameUrl, data.name)
+  const launchSession = await createLaunchSession(data.slug)
+  const sessionGameUrl = appendQueryParams(gameUrl, {
+    looty_session_id: launchSession.session_id,
+    looty_launch_token: launchSession.launch_token,
+    looty_game_id: launchSession.game_id,
+    looty_currency: launchSession.currency,
+    looty_gateway_url: supabaseFunctionsUrl ? `${supabaseFunctionsUrl}/looty-gateway` : "",
+  })
+
+  if (!sessionGameUrl) {
+    showError({
+      code: ERROR_CODES.GAME_URL_INVALID,
+      title: "Game URL is invalid",
+      message: "Looty could not prepare the game launch URL.",
+    })
+    return
+  }
+
+  mountGameIframe(sessionGameUrl, data.name)
   primeParentScroll()
+}
+
+async function createLaunchSession(gameSlug) {
+  const { data, error } = await supabase.functions.invoke("looty-gateway/create-session", {
+    body: {
+      slug: gameSlug,
+      currency: "POINT",
+      expires_in_seconds: 3600,
+    },
+  })
+
+  if (error) {
+    throw error
+  }
+
+  if (!data?.session_id || !data?.launch_token) {
+    throw new Error("Looty gateway returned an empty session.")
+  }
+
+  return data
 }
 
 function mountGameIframe(gameUrl, gameName) {

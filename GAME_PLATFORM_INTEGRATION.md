@@ -30,9 +30,9 @@ Lobby
   -> iframe 載入遊戲
 ```
 
-目前已套用 DB 平台骨架，並已建立第一版 game session / wallet RPC。
-這些 RPC 目前只開給 `service_role`，還沒有開給前端直接呼叫。
-Supabase Edge Function `looty-gateway` 已部署，第一版只提供 `create-session`。
+目前已套用 DB 平台骨架，並已建立 game session / wallet RPC。
+這些 RPC 只開給 `service_role`，前端與遊戲不能直接呼叫。
+Supabase Edge Function `looty-gateway` 已部署，負責建立 session 與轉接 wallet 操作。
 
 所以現階段遊戲接 Looty，先做到：
 
@@ -42,8 +42,8 @@ Supabase Edge Function `looty-gateway` 已部署，第一版只提供 `create-se
 - 不要求 Looty 前台登入。
 - 不要求遊戲自己讀 Supabase Auth。
 - 不直接寫玩家或錢包資料。
-- 之後要透過 Looty Gateway / 後端呼叫 RPC，不把 service role key 放進遊戲前端。
-- 現在已有 `looty-gateway/create-session`，但 Loader 尚未接入。
+- 之後透過 Looty Gateway / 後端呼叫 RPC，不把 service role key 放進遊戲前端。
+- Loader 進遊戲前會呼叫 `looty-gateway/create-session`，再把 Looty session 參數帶給 iframe。
 
 ## 給遊戲 AI 的最短規則
 
@@ -227,10 +227,23 @@ created_at
 Player
   -> Lobby
   -> /game/?slug=<slug>
-  -> iframe launch_url
+  -> looty-gateway/create-session
+  -> iframe launch_url + Looty query params
 ```
 
-下一階段目標：
+目前 Loader 會附加給 iframe 的 query params：
+
+```text
+looty_session_id
+looty_launch_token
+looty_game_id
+looty_currency
+looty_gateway_url
+```
+
+遊戲可以先只讀這些參數，不一定要立刻接錢包。舊遊戲如果忽略這些 query params，仍可照常顯示。
+
+啟動目標：
 
 ```text
 Player / Guest
@@ -364,12 +377,30 @@ POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-
 }
 ```
 
+Wallet endpoints：
+
+```http
+POST /functions/v1/looty-gateway/balance
+POST /functions/v1/looty-gateway/bet
+POST /functions/v1/looty-gateway/payout
+POST /functions/v1/looty-gateway/refund
+POST /functions/v1/looty-gateway/close-round
+```
+
+Wallet endpoint 共通要求：
+
+- 呼叫端要帶 Supabase JWT / anon authorization header。
+- body 要帶 `launch_token`。
+- `bet` / `payout` / `refund` 要帶 `round_id`、`amount`、`idempotency_key`。
+- `metadata` 可選，但必須是 object。
+- service role key 只存在 Edge Function 環境，不進遊戲前端。
+
 注意：
 
-- 目前只做 create session。
-- 尚未提供公開 wallet bet / payout / refund endpoint。
-- Loader 尚未改成使用 Gateway。
 - 不存在 slug 會回 `404 game is not available`，不建立 session。
+- 無效或過期 `launch_token` 會回 `404 game session is not active`。
+- 缺必要參數會回 `400`。
+- 重送同一個 `idempotency_key` 不會重複扣款或重複派彩。
 
 ## 建議 API / RPC
 
@@ -530,6 +561,7 @@ Looty Platform
 - `20260709170000_create_platform_account_wallet_core.sql`
 - `20260710010000_create_game_session_wallet_rpc.sql`
 - `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
+- `20260710013000_fix_wallet_rpc_variable_conflicts.sql`
 
 已部署 Edge Function：
 
@@ -561,7 +593,8 @@ Looty Platform
 ## 實作提醒
 
 - 不要先做完整會員中心再做遊戲 session。
-- 下一步應決定 Loader 是否接 `looty-gateway/create-session`。
+- Loader 已接 `looty-gateway/create-session`。
+- 下一步是挑一個乾淨的遊戲 repo，正式接 `looty_launch_token` 與 wallet endpoints。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
 - Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前 MVP blocker。

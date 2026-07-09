@@ -40,7 +40,8 @@ Looty MVP 要先把這條主路徑做穩：
 - `npm run build` 可成功輸出多頁靜態站。
 - 2026-07-10 已套用平台骨架 migration，新增玩家帳號、平台錢包、交易流水、game session、game round 的 DB 地基。
 - 2026-07-10 已套用第一版 game session / wallet RPC，目前只開給 `service_role`。
-- 2026-07-10 已部署 Supabase Edge Function `looty-gateway`，第一版只提供 `create-session`。
+- 2026-07-10 已部署 Supabase Edge Function `looty-gateway`，支援 `create-session` 與第一版 wallet endpoints。
+- 2026-07-10 Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session 並把 Looty session 參數附加到 iframe URL。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -54,7 +55,7 @@ Looty MVP 要先把這條主路徑做穩：
 1. 用 Admin 上架 / 下架 / 編輯遊戲資料。
 2. 確認 Lobby 能看到公開遊戲。
 3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
-4. 決定 Game Loader 是否接 `looty-gateway/create-session`。
+4. 挑一個乾淨的遊戲 repo，依 Looty session 參數正式接入 wallet endpoints。
 5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
 6. 有具體問題時再針對該問題修正。
 
@@ -72,6 +73,8 @@ Looty MVP 要先把這條主路徑做穩：
 ## 目前 Loader 策略
 
 - Loader 保留全畫面 Loading overlay。
+- Loader 先建立 Looty game session，再啟動 iframe。
+- Loader 會把 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url` 傳給遊戲。
 - iframe 一開始就滿版載入，避免 overlay 消失時畫面跳動。
 - 外層 document 保留原生 scroll，配合 sticky 遊戲容器，讓手機瀏覽器網址列有機會收合。
 - overlay 可見時接住垂直滑動手勢，隱藏後才把觸控交回 iframe。

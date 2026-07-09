@@ -43,7 +43,7 @@ Looty 目前不負責：
 - Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
 - Auth / Database / View 走 Looty Supabase：`lsazydefvnuqglultqii`。
 - Lobby 直接讀 `public_games_v1`。
-- Game Loader 直接用 `slug` 查 `public_games_v1`，再用 `launch_url` 載入 iframe。
+- Game Loader 用 `slug` 查 `public_games_v1`，先呼叫 `looty-gateway/create-session`，再把 Looty session 參數附加到 iframe `launch_url`。
 - 前台會員登入已從 Lobby 移除，首頁維持純公開遊戲入口。
 - Admin 使用 Google OAuth + `admin_users` email 白名單。
 - Admin 可管理 `games` 的基本上架欄位。
@@ -51,7 +51,7 @@ Looty 目前不負責：
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
 - 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
-- Supabase Edge Function `looty-gateway` 已部署，第一版只提供 `create-session`。
+- Supabase Edge Function `looty-gateway` 已部署，支援 `create-session` 與第一版 wallet endpoints。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -63,7 +63,7 @@ Looty 目前不負責：
 1. 保持首頁 -> Game Loader -> 遊戲啟動的主路徑穩定。
 2. 用電腦版 Admin 管理遊戲上架資料。
 3. 讓文件清楚分出 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
-4. 下一步決定 `/game/?slug=...` 是否要接 `looty-gateway` 建立 session。
+4. 讓遊戲接入 AI 依 `GAME_PLATFORM_INTEGRATION.md` 讀取 Looty session 參數。
 5. 不先做完整會員中心、不恢復前台登入 UI、不接 Supinova、不切正式網域。
 
 ## 路由
@@ -133,7 +133,19 @@ Lobby 讀取欄位：
 2. 查 `public_games_v1`。
 3. 取出 `launch_url`。
 4. 用 `src/lib/urls.js` 檢查 URL。
-5. 以 iframe 載入遊戲。
+5. 呼叫 `looty-gateway/create-session` 建立平台 session。
+6. 將 Looty session 參數加到 iframe URL。
+7. 以 iframe 載入遊戲。
+
+Loader 會附加給遊戲的 query params：
+
+- `looty_session_id`
+- `looty_launch_token`
+- `looty_game_id`
+- `looty_currency`
+- `looty_gateway_url`
+
+舊遊戲若不讀這些參數，仍可照常顯示。
 
 `launch_url` 只接受：
 
@@ -253,6 +265,7 @@ ORDER BY sort_order, created_at DESC;
 - `20260709170000_create_platform_account_wallet_core.sql`
 - `20260710010000_create_game_session_wallet_rpc.sql`
 - `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
+- `20260710013000_fix_wallet_rpc_variable_conflicts.sql`
 
 目前 public schema 包含：
 
@@ -304,6 +317,11 @@ https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway
 
 ```http
 POST /functions/v1/looty-gateway/create-session
+POST /functions/v1/looty-gateway/balance
+POST /functions/v1/looty-gateway/bet
+POST /functions/v1/looty-gateway/payout
+POST /functions/v1/looty-gateway/refund
+POST /functions/v1/looty-gateway/close-round
 ```
 
 輸入：
@@ -337,7 +355,8 @@ POST /functions/v1/looty-gateway/create-session
 - service role key 不放進前端。
 - 已驗證未授權呼叫回 `401`。
 - 已驗證不存在 slug 回 `404 game is not available`，不新增資料。
-- 目前前端 Loader 還沒接這個 Gateway，仍維持原本 iframe 啟動流程。
+- 已驗證 Gateway 可完成 create-session、balance、payout、bet、idempotency、close-round 流程。
+- 前端 Loader 已接 `create-session`，但舊遊戲不需要立刻改程式。
 
 ## 環境變數
 
@@ -432,6 +451,7 @@ Smoke 目標：
 
 - `npm run build` 通過。
 - `npm run smoke` 通過。
+- Gateway wallet smoke 通過。
 
 若要指定 browser，用 `SMOKE_BROWSER_PATH`。
 
@@ -499,7 +519,7 @@ Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。�
 
 1. 不要假設 repo 有 `enabled-games` 白名單。
 2. 新增遊戲時確認 `published`、`launch_url`、`sort_order`。
-3. Loader 啟動失敗時，優先查 `public_games_v1` 是否查得到該 `slug`。
+3. Loader 啟動失敗時，優先查 `public_games_v1` 是否查得到該 `slug`，再查 `looty-gateway/create-session`。
 4. 調整公開規則時，優先改 DB view / policy，不要加本地硬編碼。
 5. 改部署前，先保住目前可用的靜態輸出流程。
 6. 做遊戲接入前，先讀 `GAME_PLATFORM_INTEGRATION.md`。

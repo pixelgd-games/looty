@@ -91,12 +91,15 @@
 - 會員、Guest、錢包初始化放在 DB RPC 或後端流程，不要讓前端直接寫玩家或錢包表。
 - 目前 5 張平台骨架表已開 RLS，尚未開前端讀寫 policy。
 - Game session / wallet RPC 已建立，目前只開給 `service_role`，不要從前端直接呼叫。
-- Supabase Edge Function `looty-gateway` 已部署，第一版只提供 `create-session`。
+- Supabase Edge Function `looty-gateway` 已部署，支援 `create-session` 與第一版 wallet endpoints。
+- Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session，並把 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url` 傳給 iframe。
 
 ## 最近確認
 
 - 2026-07-09 已在本機建立 `.env.supabase.local`，並驗證 `.\scripts\supabase-looty.cmd projects list` 可看到 Looty linked true。
 - 2026-07-10 已套用平台骨架 migration：`20260709170000_create_platform_account_wallet_core.sql`。
 - 2026-07-10 已套用 RPC migration：`20260710010000_create_game_session_wallet_rpc.sql` 與 `20260710011000_restrict_game_session_wallet_rpc_grants.sql`。
+- 2026-07-10 已套用 RPC 修正 migration：`20260710013000_fix_wallet_rpc_variable_conflicts.sql`。
 - 2026-07-10 已部署 `looty-gateway` Edge Function；未授權呼叫回 401，不存在 slug 回 404 且不新增資料。
+- 2026-07-10 已驗證 Gateway 可完成 create-session、balance、payout、bet、idempotency、close-round 流程。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
