@@ -4,11 +4,12 @@ Looty 是 Flash 系統裡的遊戲入口 / Lobby / 輕量 Admin 前端。
 
 這份文件是 **目前 repo 實作真相來源**。AI 或 Codex 進來時先讀這份，不要優先相信舊對話或過時交接內容。
 
-## 文件閱讀順序
+## AI 文件閱讀順序
 
 1. `README.md`: 目前程式架構、資料流、部署與限制。
-2. `LOOTY_MVP.md`: MVP 產品邊界、目前不做什麼、下一步。
-3. `FLASH.md`: Flash 大系統背景，只看責任邊界，不當作 repo 細節真相。
+2. `GAME_PLATFORM_INTEGRATION.md`: 給 AI 的遊戲 / 平台接入準則，包含錢包、帳號、Guest、Game Gateway 的目前設計結論與未定事項。
+3. `LOOTY_MVP.md`: MVP 產品邊界、目前不做什麼、下一步。
+4. `FLASH.md`: Flash 大系統背景，只看責任邊界，不當作 repo 細節真相。
 
 ## 專案定位
 
