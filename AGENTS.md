@@ -44,13 +44,16 @@
 
 - Looty Supabase project ref 是 `lsazydefvnuqglultqii`。
 - Supabase CLI token 在這台 Windows 上是全域登入狀態，不是專案檔的一部分。
-- 不要只相信 profile 名稱或目前所在資料夾；每次 DB 操作前都要跑 `projects list`。
+- Looty 遠端 Supabase 操作優先使用 `.\scripts\supabase-looty.cmd`，不要直接依賴全域 `supabase login`。
+- 不要只相信 profile 名稱或目前所在資料夾；每次 DB 操作前都要跑 `.\scripts\supabase-looty.cmd projects list`。
 - `projects list` 必須看到 `Looty` / `lsazydefvnuqglultqii` / `linked: true`。
-- 如果只看到 `arua`，立刻停止；先 `npx supabase logout --yes`，再用 `pixelgd.games@gmail.com` 重新登入。
+- 如果只看到 `arua`，立刻停止；不要反覆叫使用者重登，先確認 `.env.supabase.local` 是否是 Looty token。
 - 不要使用 arua / Aura 的 Supabase CLI 狀態操作 Looty。
 - Looty 目前主力用 Supabase CLI + migration 管理 DB。
 - Supabase MCP 暫不授權、不作為主要操作方式，也不要給其他專案共用 Looty MCP。
 - 要改 DB 前，先產 SQL migration 給使用者確認。
+- `.env.supabase.local` 只放本機，不提交；範本是 `.env.supabase.local.example`。
+- 如果 `.env.supabase.local` 不存在，請使用者在本機建立；不要要求使用者把 token 或 DB password 貼到對話裡。
 - 不要在文件或程式碼裡提交 Supabase access token、service role key、DB password。
 
 ## DB 規則

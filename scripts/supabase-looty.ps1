@@ -1,0 +1,87 @@
+param(
+  [Parameter(ValueFromRemainingArguments = $true)]
+  [string[]]$SupabaseArgs
+)
+
+$ErrorActionPreference = "Stop"
+
+$ProjectRef = "lsazydefvnuqglultqii"
+$ProjectName = "Looty"
+$Root = Split-Path -Parent $PSScriptRoot
+$EnvFile = Join-Path $Root ".env.supabase.local"
+
+function Stop-LootySupabase {
+  param([string]$Message)
+  Write-Host $Message -ForegroundColor Red
+  exit 1
+}
+
+if (!(Test-Path -LiteralPath $EnvFile)) {
+  Stop-LootySupabase "Missing .env.supabase.local. Copy .env.supabase.local.example, then fill Looty token and DB password."
+}
+
+foreach ($rawLine in Get-Content -LiteralPath $EnvFile -Encoding UTF8) {
+  $line = $rawLine.Trim()
+
+  if ($line -eq "" -or $line.StartsWith("#")) {
+    continue
+  }
+
+  $pair = $line -split "=", 2
+
+  if ($pair.Count -ne 2) {
+    continue
+  }
+
+  $name = $pair[0].Trim()
+  $value = $pair[1].Trim()
+
+  if ($value.Length -ge 2) {
+    $first = $value[0]
+    $last = $value[$value.Length - 1]
+
+    if (($first -eq '"' -and $last -eq '"') -or ($first -eq "'" -and $last -eq "'")) {
+      $value = $value.Substring(1, $value.Length - 2)
+    }
+  }
+
+  if ($name -match "^[A-Za-z_][A-Za-z0-9_]*$") {
+    Set-Item -Path "Env:$name" -Value $value
+  }
+}
+
+if ([string]::IsNullOrWhiteSpace($env:SUPABASE_ACCESS_TOKEN)) {
+  Stop-LootySupabase "Missing SUPABASE_ACCESS_TOKEN in .env.supabase.local."
+}
+
+if ([string]::IsNullOrWhiteSpace($env:SUPABASE_PROJECT_ID)) {
+  $env:SUPABASE_PROJECT_ID = $ProjectRef
+}
+
+if ($env:SUPABASE_PROJECT_ID -ne $ProjectRef) {
+  Stop-LootySupabase "SUPABASE_PROJECT_ID must be $ProjectRef for Looty."
+}
+
+if ($SupabaseArgs.Count -eq 0) {
+  $SupabaseArgs = @("projects", "list")
+}
+
+$isProjectsList = $SupabaseArgs.Count -ge 2 -and $SupabaseArgs[0] -eq "projects" -and $SupabaseArgs[1] -eq "list"
+
+if (!$isProjectsList) {
+  $projectList = & npx.cmd supabase --workdir $Root projects list 2>&1
+
+  if ($LASTEXITCODE -ne 0) {
+    $projectList | Write-Output
+    exit $LASTEXITCODE
+  }
+
+  $projectListText = $projectList -join "`n"
+
+  if ($projectListText -notmatch [regex]::Escape($ProjectName) -or $projectListText -notmatch [regex]::Escape($ProjectRef)) {
+    Stop-LootySupabase "Supabase token does not show Looty / $ProjectRef. Stop before running command."
+  }
+}
+
+& npx.cmd supabase --workdir $Root @SupabaseArgs
+exit $LASTEXITCODE

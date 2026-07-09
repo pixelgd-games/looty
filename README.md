@@ -252,15 +252,25 @@ AI / Codex 操作 Supabase 時，先確認目標是 Looty，不要沿用其他�
 
 - `supabase/config.toml`: Looty 的本地 Supabase CLI 骨架。
 - Looty 本地 Supabase link: `lsazydefvnuqglultqii`。
+- `.env.supabase.local.example`: Looty 私密 Supabase env 範本。
+- `scripts/supabase-looty.cmd`: Looty 專用 Supabase CLI 包裝指令，會載入本地 token 並先檢查 Looty 專案。
 - `.codex/config.toml`: Looty 專案限定的 Supabase MCP 設定，先保留 read-only 設定，但目前不授權啟用。
 
 確認 CLI 連到正確專案：
 
-```bash
-npx supabase --workdir "D:\Studio\Project_Code\looty" projects list
+```powershell
+.\scripts\supabase-looty.cmd projects list
 ```
 
 確認結果裡 `Looty` / `lsazydefvnuqglultqii` 應該是 `linked: true`。
+
+本機第一次設定：
+
+```powershell
+copy .env.supabase.local.example .env.supabase.local
+```
+
+然後在 `.env.supabase.local` 填 Looty 專用 `SUPABASE_ACCESS_TOKEN` 與 `SUPABASE_DB_PASSWORD`。不要把 `.env.supabase.local` 上傳或貼到對話裡。
 
 目前 MCP URL：
 
@@ -276,12 +286,14 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 要改 DB 前，先產 SQL migration 給使用者確認。
 - 不要拿 Aura 或其他專案的 Supabase CLI link 來操作 Looty。
 - Supabase CLI 登入 token 在這台 Windows 上是全域狀態，不是專案檔的一部分；不要只相信 profile 名稱。
+- Looty 遠端 Supabase 操作優先使用 `.\scripts\supabase-looty.cmd`，不要直接依賴全域 `supabase login`。
+- `.env.supabase.local` 只放本機，不提交；內容需要 `SUPABASE_ACCESS_TOKEN`、`SUPABASE_PROJECT_ID=lsazydefvnuqglultqii`、`SUPABASE_DB_PASSWORD`。
 - 如果 `projects list` 看不到 `Looty` / `lsazydefvnuqglultqii`，或只看到 `arua`，立刻停止；代表目前 CLI token 不是 Looty 帳號。
-- 遇到上面狀況時，先 `npx supabase logout --yes`，再用 `pixelgd.games@gmail.com` 重新 `npx supabase --output-format text login`。
+- 遇到上面狀況時，不要反覆叫使用者重登；先確認 `.env.supabase.local` 是否是 Looty token。
 - Codex 目前 session 不一定會立刻載入新 MCP；通常需要重開 Codex session 後再授權 Supabase。
-- 若 MCP 工具沒有出現，可用 Supabase CLI 做 schema 檢查，但必須先確認 `projects list` 是 Looty。
+- 若 MCP 工具沒有出現，可用 `.\scripts\supabase-looty.cmd` 做 schema 檢查，但必須先確認 `projects list` 是 Looty。
 - 2026-07-09 已用 Dashboard SQL Editor 清掉舊 `players`、`player_balances`、`ensure_my_player_v1()`。
-- 2026-07-09 已用 DB password 重新 link pooler；CLI 在登入正確 Looty 帳號時可讀寫 Looty DB。
+- 2026-07-09 已用 DB password 重新 link pooler；CLI 在使用正確 Looty token 時可讀寫 Looty DB。
 - 2026-07-09 已用 CLI 清掉未使用的 `access_whitelist`、`site_settings`。
 
 ## 開發與建置

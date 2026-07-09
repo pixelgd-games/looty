@@ -405,15 +405,18 @@ lsazydefvnuqglultqii
 AI 操作 Supabase 前必須先確認目前目標是 Looty，不是 Aura、Supinova 或其他專案。
 
 注意：Supabase CLI 登入 token 在這台 Windows 上是全域狀態，不是專案檔的一部分。不要只相信 `--profile` 名稱或目前所在資料夾。
+Looty 遠端 Supabase 操作優先使用專案包裝指令，不要直接依賴全域 `supabase login`。
 
 確認方式：
 
-```bash
-npx supabase --workdir "D:\Studio\Project_Code\looty" projects list
+```powershell
+.\scripts\supabase-looty.cmd projects list
 ```
 
 結果中 `Looty` / `lsazydefvnuqglultqii` 應為 `linked: true`。
 如果只看到 `arua`，立刻停止；這代表目前 CLI token 不是 Looty 帳號。
+
+本機第一次設定時，從 `.env.supabase.local.example` 建立 `.env.supabase.local`，填入 Looty 專用 `SUPABASE_ACCESS_TOKEN` 與 `SUPABASE_DB_PASSWORD`。`.env.supabase.local` 只留本機，不提交、不貼到對話裡。
 
 目前 Looty 專案內有 `.codex/config.toml`，設定了 project-scoped Supabase MCP：
 
@@ -427,7 +430,8 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 不要直接改 production DB。
 - 要改 DB 時，先產 SQL migration，讓使用者確認後再執行。
 - 不要用其他專案的 Supabase CLI 預設登入操作 Looty。
-- 如果 CLI token 指到錯帳號，先 `npx supabase logout --yes`，再用 `pixelgd.games@gmail.com` 重新登入。
+- `.env.supabase.local` 只放本機，不提交；內容需要 Looty 的 `SUPABASE_ACCESS_TOKEN`、`SUPABASE_PROJECT_ID`、`SUPABASE_DB_PASSWORD`。
+- 如果 CLI token 指到錯帳號，不要反覆叫使用者重登；先確認 `.env.supabase.local` 是否是 Looty token。
 - 不要在文件或程式碼裡提交 Supabase access token、service role key、DB password。
 
 ## 參考資料
