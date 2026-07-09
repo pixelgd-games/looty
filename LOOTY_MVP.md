@@ -87,7 +87,7 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 若未來恢復會員功能，建議：
 
 - 先重新設計前台入口，不要直接把舊 modal 塞回 Lobby。
-- 會員初始化放在 DB RPC 或後端流程，不要讓前端直接 `insert players` / `player_balances`。
+- 會員、Guest、錢包初始化放在 DB RPC 或後端流程，不要讓前端直接 `insert player_accounts` / `wallet_accounts` / `wallet_transactions`。
 - 先定義登入後落點，例如 `/me` 或會員中心，再恢復 UI。
 
 ## 資料來源原則
