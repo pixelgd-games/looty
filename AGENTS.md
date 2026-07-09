@@ -54,6 +54,7 @@
 - 要改 DB 前，先產 SQL migration 給使用者確認。
 - 不要留下未確認的 baseline / 大重建 migration 草稿；這類檔案容易被誤套用。
 - `.env.supabase.local` 只放本機，不提交；範本是 `.env.supabase.local.example`。
+- 2026-07-09 已在本機建立 `.env.supabase.local` 並驗證 `.\scripts\supabase-looty.cmd projects list` 可看到 Looty linked true。
 - 如果 `.env.supabase.local` 不存在，請使用者在本機建立；不要要求使用者把 token 或 DB password 貼到對話裡。
 - 不要在文件或程式碼裡提交 Supabase access token、service role key、DB password。
 

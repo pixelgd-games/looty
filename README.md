@@ -297,6 +297,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 - 2026-07-09 已用 DB password 重新 link pooler；CLI 在使用正確 Looty token 時可讀寫 Looty DB。
 - 2026-07-09 已用 CLI 清掉未使用的 `access_whitelist`、`site_settings`。
 - 2026-07-09 已刪除未追蹤的 `20260709131000_baseline_core_schema.sql` 草稿；目前不保留 baseline migration。
+- 2026-07-09 已在本機建立 `.env.supabase.local` 並測試 `.\scripts\supabase-looty.cmd projects list` 成功看到 `Looty` / `lsazydefvnuqglultqii` / `linked: true`。
 
 ## 開發與建置
 

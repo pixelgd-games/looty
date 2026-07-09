@@ -419,6 +419,8 @@ Looty 遠端 Supabase 操作優先使用專案包裝指令，不要直接依賴�
 
 本機第一次設定時，從 `.env.supabase.local.example` 建立 `.env.supabase.local`，填入 Looty 專用 `SUPABASE_ACCESS_TOKEN` 與 `SUPABASE_DB_PASSWORD`。`.env.supabase.local` 只留本機，不提交、不貼到對話裡。
 
+2026-07-09 已在本機設定完成並驗證成功：`.\scripts\supabase-looty.cmd projects list` 可看到 `Looty` / `lsazydefvnuqglultqii` / `linked: true`。
+
 目前 Looty 專案內有 `.codex/config.toml`，設定了 project-scoped Supabase MCP：
 
 ```text
