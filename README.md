@@ -50,6 +50,7 @@ Looty 目前不負責：
 - 前台 / Loader / Admin 共用錯誤視窗與 `LOOTY-*` 錯誤代碼。
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
+- 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -61,7 +62,7 @@ Looty 目前不負責：
 1. 保持首頁 -> Game Loader -> 遊戲啟動的主路徑穩定。
 2. 用電腦版 Admin 管理遊戲上架資料。
 3. 讓文件清楚分出 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
-4. 下一步設計最小 `create_game_session` / wallet RPC 或後端流程。
+4. 下一步設計 Gateway / 後端如何安全呼叫 `create_game_session` 與 wallet RPC。
 5. 不先做完整會員中心、不恢復前台登入 UI、不接 Supinova、不切正式網域。
 
 ## 路由
@@ -248,6 +249,8 @@ ORDER BY sort_order, created_at DESC;
 - `20260709123000_drop_legacy_player_balance.sql`
 - `20260709124500_drop_unused_access_settings.sql`
 - `20260709170000_create_platform_account_wallet_core.sql`
+- `20260710010000_create_game_session_wallet_rpc.sql`
+- `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
 
 目前 public schema 包含：
 
@@ -282,8 +285,10 @@ ORDER BY sort_order, created_at DESC;
 安全現況：
 
 - 5 張平台骨架表都有開 RLS。
-- 目前沒有開前端讀寫 policy。
-- 未來玩家、Guest、錢包初始化應走 DB RPC、後端或 Gateway。
+- 目前沒有開前端直接讀寫 table 的 policy。
+- `create_game_session`、`wallet_get_balance`、`wallet_bet`、`wallet_payout`、`wallet_refund`、`close_game_round` 目前只 grant 給 `service_role`。
+- `looty_hash_launch_token`、`looty_active_session`、`looty_apply_wallet_transaction` 是內部 helper，目前只保留 owner execute。
+- 未來玩家、Guest、錢包初始化應走後端或 Gateway，不要讓前端直接寫 table。
 
 ## 環境變數
 

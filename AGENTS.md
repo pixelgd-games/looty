@@ -90,9 +90,11 @@
 - 錢包用 `wallet_accounts` + `wallet_transactions`，不要復活舊 `player_balances`。
 - 會員、Guest、錢包初始化放在 DB RPC 或後端流程，不要讓前端直接寫玩家或錢包表。
 - 目前 5 張平台骨架表已開 RLS，尚未開前端讀寫 policy。
+- Game session / wallet RPC 已建立，目前只開給 `service_role`，不要從前端直接呼叫。
 
 ## 最近確認
 
 - 2026-07-09 已在本機建立 `.env.supabase.local`，並驗證 `.\scripts\supabase-looty.cmd projects list` 可看到 Looty linked true。
 - 2026-07-10 已套用平台骨架 migration：`20260709170000_create_platform_account_wallet_core.sql`。
+- 2026-07-10 已套用 RPC migration：`20260710010000_create_game_session_wallet_rpc.sql` 與 `20260710011000_restrict_game_session_wallet_rpc_grants.sql`。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。

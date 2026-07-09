@@ -30,7 +30,8 @@ Lobby
   -> iframe 載入遊戲
 ```
 
-目前已套用 DB 平台骨架，但還沒有完成正式 session / wallet RPC。
+目前已套用 DB 平台骨架，並已建立第一版 game session / wallet RPC。
+這些 RPC 目前只開給 `service_role`，還沒有開給前端直接呼叫。
 
 所以現階段遊戲接 Looty，先做到：
 
@@ -40,6 +41,7 @@ Lobby
 - 不要求 Looty 前台登入。
 - 不要求遊戲自己讀 Supabase Auth。
 - 不直接寫玩家或錢包資料。
+- 之後要透過 Looty Gateway / 後端呼叫 RPC，不把 service role key 放進遊戲前端。
 
 ## 給遊戲 AI 的最短規則
 
@@ -55,7 +57,7 @@ Lobby
 - 不要直接寫 `player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 每一局要有自己的 `round_id` 或等價局號。
 - 下注、派彩、退款要能帶唯一 `idempotency_key`。
-- 等 Looty 提供 session / wallet API 後，再透過 API 回報下注、派彩、退款。
+- 等 Looty Gateway / 後端 API 接好後，再透過 API 回報下注、派彩、退款。
 
 ## 責任分工
 
@@ -323,7 +325,7 @@ settled_at
 
 ## 建議 API / RPC
 
-下一階段可設計：
+DB 層第一版已建立：
 
 ```text
 create_game_session
@@ -332,15 +334,20 @@ wallet_bet
 wallet_payout
 wallet_refund
 close_game_round
+```
+
+尚未建立：
+
+```text
 upgrade_guest_account
 ```
 
-也可以在底層對應成：
+底層 helper 包含：
 
 ```text
-wallet_debit
-wallet_credit
-wallet_rollback
+looty_hash_launch_token
+looty_active_session
+looty_apply_wallet_transaction
 ```
 
 但給遊戲看的語意建議保持：
@@ -473,11 +480,14 @@ Looty Platform
 - `20260709123000_drop_legacy_player_balance.sql`
 - `20260709124500_drop_unused_access_settings.sql`
 - `20260709170000_create_platform_account_wallet_core.sql`
+- `20260710010000_create_game_session_wallet_rpc.sql`
+- `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
 
 注意：
 
 - `games` / `public_games_v1` / `admin_users` 是目前前台與 Admin 正在使用的核心資料。
 - 5 張平台骨架表已開 RLS，目前沒有開前端讀寫 policy。
+- Game session / wallet RPC 目前只開給 `service_role`，不要從前端直接呼叫。
 - 新平台錢包不要沿用 `player_balances`。
 - 玩家資料用 `player_accounts`，不要復活 `players`。
 - 錢包資料用 `wallet_accounts` + `wallet_transactions`，保留交易流水、局號與 idempotency。
@@ -494,12 +504,12 @@ Looty Platform
 - `wallet_accounts.balance` 是否只是目前餘額快取，或是否要完全以 `wallet_transactions` 重算。
 - 第一版是否立刻使用 `locked_balance`。
 - 第一版是否需要 `wallet_type`。
-- Game Gateway 第一版放在 Supabase RPC、Edge Function，還是外部 API server。
+- Game Gateway 第一版放在 Edge Function，還是外部 API server。
 
 ## 實作提醒
 
 - 不要先做完整會員中心再做遊戲 session。
-- 下一步應先做最小可用 `create_game_session`。
+- 下一步應設計 Gateway / 後端如何安全呼叫 `create_game_session`。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
 - Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前 MVP blocker。
