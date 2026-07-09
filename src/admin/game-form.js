@@ -1,7 +1,8 @@
 // src/admin/game-form.js
 import { supabase } from "../lib/supabaseClient.js";
-import "./auth.js";
+import { normalizeLaunchUrl } from "../lib/urls.js";
 import { ERROR_CODES, showErrorModal } from "../ui/error-modal.js";
+import { requireAdmin } from "./auth.js";
 
 const form = document.getElementById("gameForm");
 const params = new URLSearchParams(window.location.search);
@@ -87,7 +88,12 @@ async function submitForm(e) {
   if (!slugCheck.ok) return showValidationError(slugCheck.msg);
   const sortOrderCheck = parseSortOrder(val("sort_order"));
   if (!sortOrderCheck.ok) return showValidationError(sortOrderCheck.msg);
-  const launchUrl = val("launch_url").trim();
+  const launchUrlInput = val("launch_url").trim();
+  const launchUrl = normalizeLaunchUrl(launchUrlInput);
+
+  if (launchUrlInput && !launchUrl) {
+    return showValidationError("launch url 只能使用 http(s) 或 / 開頭的站內路徑");
+  }
 
   const payload = {
     name,
@@ -132,7 +138,7 @@ async function submitForm(e) {
 }
 
 async function initFormPage() {
-  const ok = await window.LootyAdminAuth.requireAdmin();
+  const ok = await requireAdmin();
   if (!ok) return;
 
   if (gameId) {

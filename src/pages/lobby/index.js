@@ -1,5 +1,4 @@
 import { fetchPublicGames } from "./data.js"
-import { getLobbyElements } from "./dom.js"
 import { renderGameGrid, renderGameGridError } from "./game-grid.js"
 import { renderLobby } from "./lobby.js"
 import { ERROR_CODES, showErrorModal } from "../../ui/error-modal.js"
@@ -9,13 +8,13 @@ export async function initLobbyPage(appRoot) {
 
   appRoot.innerHTML = renderLobby()
 
-  const elements = getLobbyElements(appRoot)
+  const gameGrid = appRoot.querySelector("#gameGrid")
 
   try {
     const games = await fetchPublicGames()
-    renderGameGrid(elements.gameGrid, games)
+    renderGameGrid(gameGrid, games)
   } catch (error) {
-    renderGameGridError(elements.gameGrid)
+    renderGameGridError(gameGrid)
     showErrorModal({
       code: ERROR_CODES.LOBBY_GAMES_READ_FAILED,
       title: "Game list failed to load",

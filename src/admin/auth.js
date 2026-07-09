@@ -1,19 +1,22 @@
-// src/admin/auth.js
-import { supabase } from "../lib/supabaseClient.js";
-import { ERROR_CODES, showErrorModal } from "../ui/error-modal.js";
+import { supabase } from "../lib/supabaseClient.js"
+import { ERROR_CODES, showErrorModal } from "../ui/error-modal.js"
 
-// 取得 DOM（你的 login 頁 id 是 btnLogin/btnLogout/status）
-function $(sel) { return document.querySelector(sel); }
+const ADMIN_LOGIN_PATH = "/admin/login/"
+const ADMIN_GAMES_PATH = "/admin/games/"
 
-async function signInWithGoogle() {
+function $(selector) {
+  return document.querySelector(selector)
+}
+
+export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: location.origin + "/admin/login/",
-      // 強制每次都跳帳號選擇
+      redirectTo: location.origin + ADMIN_LOGIN_PATH,
       queryParams: { prompt: "select_account" },
     },
-  });
+  })
+
   if (error) {
     showErrorModal({
       code: ERROR_CODES.ADMIN_OAUTH_FAILED,
@@ -21,12 +24,12 @@ async function signInWithGoogle() {
       message: "目前無法啟動 Google 登入，請稍後再試。",
       error,
       reload: false,
-    });
+    })
   }
 }
 
-async function signOut() {
-  const { error } = await supabase.auth.signOut();
+export async function signOut() {
+  const { error } = await supabase.auth.signOut()
   if (error) {
     showErrorModal({
       code: ERROR_CODES.ADMIN_SIGN_OUT_FAILED,
@@ -34,20 +37,20 @@ async function signOut() {
       message: "目前無法完成登出，請稍後再試。",
       error,
       reload: false,
-    });
-    return;
+    })
+    return
   }
 
-  location.href = "/admin/login/";
+  location.href = ADMIN_LOGIN_PATH
 }
 
-async function requireAdmin(options = {}) {
+export async function requireAdmin(options = {}) {
   const {
     redirectIfMissing = true,
     showDeniedModal = true,
-  } = options;
+  } = options
 
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
   if (sessionError) {
     showErrorModal({
@@ -55,25 +58,23 @@ async function requireAdmin(options = {}) {
       title: "後台登入狀態讀取失敗",
       message: "目前無法確認後台登入狀態，請稍後再試。",
       error: sessionError,
-    });
-    return null;
+    })
+    return null
   }
 
   if (!session?.user) {
     if (redirectIfMissing) {
-      location.href = "/admin/login/";
+      location.href = ADMIN_LOGIN_PATH
     }
-    return null;
+    return null
   }
 
-  const user = session.user;
-  const email = user.email || "";
-
+  const email = session.user.email || ""
   const { data, error } = await supabase
     .from("admin_users")
     .select("id,email")
     .eq("email", email)
-    .maybeSingle();
+    .maybeSingle()
 
   if (error) {
     showErrorModal({
@@ -81,8 +82,8 @@ async function requireAdmin(options = {}) {
       title: "後台白名單檢查失敗",
       message: "目前無法確認管理員權限，請稍後再試。",
       error,
-    });
-    return null;
+    })
+    return null
   }
 
   if (!data) {
@@ -95,58 +96,62 @@ async function requireAdmin(options = {}) {
         primaryAction: {
           label: "前往後台登入",
           onClick: () => {
-            location.href = "/admin/login/";
+            location.href = ADMIN_LOGIN_PATH
           },
         },
-      });
+      })
     }
-    return null;
+    return null
   }
 
-  return { session, user };
+  return { session, user: session.user }
 }
 
 async function initLoginPage() {
-  const statusEl = $("#status");
-  const btnLogin = $("#btnLogin");
-  const btnLogout = $("#btnLogout");
+  const statusEl = $("#status")
+  const btnLogin = $("#btnLogin")
+  const btnLogout = $("#btnLogout")
 
-  if (btnLogin) btnLogin.addEventListener("click", signInWithGoogle);
-  if (btnLogout) btnLogout.addEventListener("click", signOut);
-  if (btnLogout) btnLogout.hidden = true;
+  btnLogin?.addEventListener("click", signInWithGoogle)
+  btnLogout?.addEventListener("click", signOut)
 
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabase.auth.getSession()
   if (error) {
-    if (statusEl) statusEl.textContent = "登入狀態讀取失敗";
+    if (statusEl) statusEl.textContent = "登入狀態讀取失敗"
     showErrorModal({
       code: ERROR_CODES.ADMIN_AUTH_READ_FAILED,
       title: "後台登入狀態讀取失敗",
       message: "目前無法確認後台登入狀態，請稍後再試。",
       error,
-    });
-    return;
+    })
+    return
   }
 
-  if (!session?.user) {
-    if (statusEl) statusEl.textContent = "尚未登入";
-    return;
+  const isSignedIn = Boolean(session?.user)
+  if (btnLogout) btnLogout.hidden = !isSignedIn
+  if (btnLogin) btnLogin.textContent = isSignedIn ? "切換 Google 帳號" : "用 Google 登入"
+
+  if (!isSignedIn) {
+    if (statusEl) statusEl.textContent = "尚未登入"
+    return
   }
 
-  if (statusEl) statusEl.textContent = "已登入，檢查管理員白名單中…";
-  const ok = await requireAdmin({
+  if (statusEl) statusEl.textContent = "已登入，檢查管理員白名單中..."
+  const admin = await requireAdmin({
     redirectIfMissing: false,
     showDeniedModal: false,
-  });
-  if (ok) location.href = "/admin/games/";
-  else if (statusEl) {
-    statusEl.textContent = "目前登入的帳號不是管理員，請使用管理員 Google 帳號登入。";
+  })
+
+  if (admin) {
+    location.href = ADMIN_GAMES_PATH
+    return
+  }
+
+  if (statusEl) {
+    statusEl.textContent = "目前登入的帳號不是管理員，請登出或切換 Google 帳號。"
   }
 }
 
-// 讓其他頁也能用
-window.LootyAdminAuth = { requireAdmin, signOut };
-
-// 只在 login 頁跑
-if (location.pathname.startsWith("/admin/login")) {
-  initLoginPage();
+if (location.pathname.startsWith(ADMIN_LOGIN_PATH)) {
+  initLoginPage()
 }

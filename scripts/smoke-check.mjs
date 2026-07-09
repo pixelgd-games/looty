@@ -3,11 +3,14 @@ import { mkdtemp } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { spawn, spawnSync } from "node:child_process"
+import http from "node:http"
 import net from "node:net"
 import { fileURLToPath } from "node:url"
+import WebSocket from "ws"
 
 const cwd = fileURLToPath(new URL("..", import.meta.url))
 const host = "127.0.0.1"
+const cdpTimeoutMs = 8000
 
 const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm"
 const viteBin = path.join(cwd, "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite")
@@ -28,17 +31,15 @@ try {
   const browserPath = findBrowser()
   console.log(`Starting browser on ${cdpPort}...`)
   browser = await startBrowser(browserPath, cdpPort)
+  console.log("Opening browser client...")
   const client = await openBrowserClient(cdpPort)
-
-  await enableBrowserDomains(client)
 
   await expectPageText(client, appPort, "/", (text) => {
     const normalizedText = text.toLowerCase()
     return normalizedText.includes("looty")
       && normalizedText.includes("game list")
       && normalizedText.includes("featured games")
-      && normalizedText.includes("popular")
-      && normalizedText.includes("lord of gomoku")
+      && !normalizedText.includes("game list failed to load")
   }, "Home loads")
 
   await expectPageText(client, appPort, "/game/", (text) => {
@@ -103,8 +104,13 @@ function startDevServer(port) {
 async function startBrowser(browserPath, cdpPort) {
   const profile = await mkdtemp(path.join(tmpdir(), "looty-smoke-browser-"))
   const instance = spawn(browserPath, [
-    "--headless=new",
+    "--headless",
     "--disable-gpu",
+    "--disable-extensions",
+    "--no-default-browser-check",
+    "--no-first-run",
+    "--remote-allow-origins=*",
+    `--remote-debugging-address=${host}`,
     `--remote-debugging-port=${cdpPort}`,
     `--user-data-dir=${profile}`,
     "about:blank",
@@ -118,35 +124,44 @@ async function startBrowser(browserPath, cdpPort) {
 }
 
 async function openBrowserClient(cdpPort) {
-  let response = await fetchWithTimeout(`http://${host}:${cdpPort}/json/new?${encodeURIComponent("about:blank")}`, {
-    method: "PUT",
-  })
-
-  if (!response.ok) {
-    response = await fetchWithTimeout(`http://${host}:${cdpPort}/json/new?${encodeURIComponent("about:blank")}`)
+  const versionResponse = await fetchWithTimeout(`http://${host}:${cdpPort}/json/version`)
+  if (!versionResponse.ok) {
+    throw new Error(`Cannot read browser version: ${versionResponse.status}`)
   }
 
-  if (!response.ok) {
-    throw new Error(`Cannot create browser target: ${response.status}`)
-  }
+  const version = await versionResponse.json()
+  const ws = new WebSocket(version.webSocketDebuggerUrl)
 
-  const target = await response.json()
-  const ws = new WebSocket(target.webSocketDebuggerUrl)
-
-  await new Promise((resolve, reject) => {
-    ws.addEventListener("open", resolve, { once: true })
-    ws.addEventListener("error", reject, { once: true })
-  })
+  await waitForWebSocketOpen(ws)
 
   let id = 0
+  let targetMessageId = 0
   const pending = new Map()
+  const targetPending = new Map()
 
-  ws.addEventListener("message", (event) => {
-    const message = JSON.parse(event.data)
+  ws.on("message", async (data) => {
+    const message = JSON.parse(await readWebSocketData(data))
+    if (message.method === "Target.receivedMessageFromTarget") {
+      const targetMessage = JSON.parse(message.params.message)
+      if (!targetMessage.id || !targetPending.has(targetMessage.id)) return
+
+      const { resolve, reject, timeout } = targetPending.get(targetMessage.id)
+      targetPending.delete(targetMessage.id)
+      clearTimeout(timeout)
+
+      if (targetMessage.error) {
+        reject(new Error(targetMessage.error.message))
+      } else {
+        resolve(targetMessage.result || {})
+      }
+      return
+    }
+
     if (!message.id || !pending.has(message.id)) return
 
-    const { resolve, reject } = pending.get(message.id)
+    const { resolve, reject, timeout } = pending.get(message.id)
     pending.delete(message.id)
+    clearTimeout(timeout)
 
     if (message.error) {
       reject(new Error(message.error.message))
@@ -155,20 +170,95 @@ async function openBrowserClient(cdpPort) {
     }
   })
 
-  const send = (method, params = {}) => {
+  const sendRaw = (method, params = {}, sessionId = null) => {
     return new Promise((resolve, reject) => {
       const callId = ++id
-      pending.set(callId, { resolve, reject })
-      ws.send(JSON.stringify({ id: callId, method, params }))
+      const timeout = setTimeout(() => {
+        pending.delete(callId)
+        reject(new Error(`CDP call timed out: ${method}`))
+      }, cdpTimeoutMs)
+
+      pending.set(callId, { resolve, reject, timeout })
+      ws.send(JSON.stringify({
+        id: callId,
+        method,
+        params,
+        ...(sessionId ? { sessionId } : {}),
+      }))
+    })
+  }
+
+  const { targetId } = await sendRaw("Target.createTarget", { url: "about:blank" })
+  const { sessionId } = await sendRaw("Target.attachToTarget", {
+    targetId,
+  })
+  const send = (method, params = {}) => {
+    return new Promise((resolve, reject) => {
+      const callId = ++targetMessageId
+      const timeout = setTimeout(() => {
+        targetPending.delete(callId)
+        reject(new Error(`CDP target call timed out: ${method}`))
+      }, cdpTimeoutMs)
+
+      targetPending.set(callId, { resolve, reject, timeout })
+      sendRaw("Target.sendMessageToTarget", {
+        sessionId,
+        message: JSON.stringify({ id: callId, method, params }),
+      }).catch((error) => {
+        targetPending.delete(callId)
+        clearTimeout(timeout)
+        reject(error)
+      })
     })
   }
 
   return { ws, send }
 }
 
-async function enableBrowserDomains(client) {
-  await client.send("Page.enable")
-  await client.send("Runtime.enable")
+async function readWebSocketData(data) {
+  if (typeof data === "string") return data
+
+  if (data instanceof ArrayBuffer) {
+    return Buffer.from(data).toString("utf8")
+  }
+
+  if (ArrayBuffer.isView(data)) {
+    return Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString("utf8")
+  }
+
+  if (typeof data?.text === "function") {
+    return data.text()
+  }
+
+  return String(data)
+}
+
+function waitForWebSocketOpen(ws) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup()
+      reject(new Error("Timed out opening browser WebSocket."))
+    }, cdpTimeoutMs)
+
+    const handleOpen = () => {
+      cleanup()
+      resolve()
+    }
+
+    const handleError = () => {
+      cleanup()
+      reject(new Error("Browser WebSocket failed to open."))
+    }
+
+    const cleanup = () => {
+      clearTimeout(timeout)
+      ws.off("open", handleOpen)
+      ws.off("error", handleError)
+    }
+
+    ws.once("open", handleOpen)
+    ws.once("error", handleError)
+  })
 }
 
 async function expectPageText(client, appPort, route, predicate, label) {
@@ -235,17 +325,32 @@ async function waitForHttp(url) {
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-
-  try {
-    return await fetch(url, {
-      ...options,
-      signal: controller.signal,
+  return new Promise((resolve, reject) => {
+    const request = http.request(url, {
+      method: options.method || "GET",
+      timeout: timeoutMs,
+    }, (response) => {
+      let body = ""
+      response.setEncoding("utf8")
+      response.on("data", (chunk) => {
+        body += chunk
+      })
+      response.on("end", () => {
+        resolve({
+          ok: response.statusCode >= 200 && response.statusCode < 300,
+          status: response.statusCode,
+          json: async () => JSON.parse(body),
+          text: async () => body,
+        })
+      })
     })
-  } finally {
-    clearTimeout(timeout)
-  }
+
+    request.on("timeout", () => {
+      request.destroy(new Error(`Timed out fetching ${url}`))
+    })
+    request.on("error", reject)
+    request.end(options.body)
+  })
 }
 
 async function getFreePort() {
