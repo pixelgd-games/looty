@@ -19,7 +19,7 @@ Looty 負責：
 - 透過 `/game/?slug=<slug>` 把玩家送進對應遊戲
 - 提供輕量 Admin 後台管理遊戲上架資料
 
-Looty 不負責：
+Looty 既有 MVP 尚未包含：
 
 - 遊戲本體玩法與前端表現
 - 即時多人同步
@@ -27,7 +27,7 @@ Looty 不負責：
 - 錢包、ledger、settlement
 - 完整會員中心與點數流水
 
-這些能力如果需要，應由 Flash 其他模組或後續需求接入，不要硬塞進 Looty。
+下一階段會在 Looty Platform 內實作玩家身份、game session 與平台錢包 / wallet interface。遊戲本體仍不應自己登入玩家或直接改錢包。長期方向請看 `GAME_PLATFORM_INTEGRATION.md`。
 
 ## 目前狀態
 
@@ -237,6 +237,43 @@ ORDER BY sort_order, created_at DESC;
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
+
+## Supabase 作業
+
+Looty 的 Supabase project ref：
+
+```text
+lsazydefvnuqglultqii
+```
+
+AI / Codex 操作 Supabase 時，先確認目標是 Looty，不要沿用其他專案的 CLI 預設登入。
+
+目前專案已有：
+
+- `supabase/config.toml`: Looty 的本地 Supabase CLI 骨架。
+- Supabase CLI profile: `looty-pixelgd`。
+- `.codex/config.toml`: Looty 專案限定的 Supabase MCP 設定，先使用 read-only。
+
+確認 CLI 連到正確專案：
+
+```bash
+npx supabase --profile looty-pixelgd --workdir "D:\Studio\Project_Code\looty" projects list
+```
+
+確認結果裡 `Looty` / `lsazydefvnuqglultqii` 應該是 `linked: true`。
+
+目前 MCP URL：
+
+```text
+https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
+```
+
+注意：
+
+- read-only MCP 只用來看 schema / table / policy，不直接改 DB。
+- 要改 DB 前，先產 SQL migration 給使用者確認。
+- 不要拿 Aura 或其他專案的 Supabase CLI link 來操作 Looty。
+- Codex 目前 session 不一定會立刻載入新 MCP；通常需要重開 Codex session 後再授權 Supabase。
 
 ## 開發與建置
 
