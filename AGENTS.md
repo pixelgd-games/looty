@@ -12,6 +12,7 @@
 4. `FLASH.md`
 
 `README.md` 是目前 repo 實作真相來源。
+`GAME_PLATFORM_INTEGRATION.md` 是給 Looty 與遊戲接入 AI 的責任邊界。
 `FLASH.md` 只看大系統背景，不當作 Looty repo 細節真相。
 
 ## 回答方式
@@ -54,20 +55,24 @@
 - 要改 DB 前，先產 SQL migration 給使用者確認。
 - 不要留下未確認的 baseline / 大重建 migration 草稿；這類檔案容易被誤套用。
 - `.env.supabase.local` 只放本機，不提交；範本是 `.env.supabase.local.example`。
-- 2026-07-09 已在本機建立 `.env.supabase.local` 並驗證 `.\scripts\supabase-looty.cmd projects list` 可看到 Looty linked true。
 - 如果 `.env.supabase.local` 不存在，請使用者在本機建立；不要要求使用者把 token 或 DB password 貼到對話裡。
 - 不要在文件或程式碼裡提交 Supabase access token、service role key、DB password。
 
-## DB 規則
+## DB 現況
 
 正式營運前的舊資料不要保留，也不要當成正式歷史資料維護。
 如果看到測試資料、過渡資料、舊設計殘留資料，先視為可清理或可重建，不要為了相容舊資料犧牲新設計。
 
-目前遠端 DB 只保留：
+目前遠端 public schema 核心包含：
 
-- `public.games`
-- `public.admin_users`
-- `public.public_games_v1`
+- `games`
+- `admin_users`
+- `public_games_v1`
+- `player_accounts`
+- `wallet_accounts`
+- `wallet_transactions`
+- `game_sessions`
+- `game_rounds`
 
 目前 repo 不保留 baseline migration。未來 DB 改動用小步、可審查的 migration，不要一次重建整個 schema。
 
@@ -79,8 +84,15 @@
 - `site_settings`
 - `ensure_my_player_v1()`
 
-未來玩家與錢包方向：
+玩家與錢包方向：
 
 - 玩家表用 `player_accounts`，不要直接復活舊 `players`。
 - 錢包用 `wallet_accounts` + `wallet_transactions`，不要復活舊 `player_balances`。
 - 會員、Guest、錢包初始化放在 DB RPC 或後端流程，不要讓前端直接寫玩家或錢包表。
+- 目前 5 張平台骨架表已開 RLS，尚未開前端讀寫 policy。
+
+## 最近確認
+
+- 2026-07-09 已在本機建立 `.env.supabase.local`，並驗證 `.\scripts\supabase-looty.cmd projects list` 可看到 Looty linked true。
+- 2026-07-10 已套用平台骨架 migration：`20260709170000_create_platform_account_wallet_core.sql`。
+- 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。

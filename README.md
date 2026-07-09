@@ -4,38 +4,44 @@ Looty 是 Flash 系統裡的遊戲入口 / Lobby / 輕量 Admin 前端。
 
 這份文件是 **目前 repo 實作真相來源**。AI 或 Codex 進來時先讀這份，不要優先相信舊對話或過時交接內容。
 
-## AI 文件閱讀順序
+## 文件地圖
 
-1. `README.md`: 目前程式架構、資料流、部署與限制。
-2. `GAME_PLATFORM_INTEGRATION.md`: 給 AI 的遊戲 / 平台接入準則，包含錢包、帳號、Guest、Game Gateway 的目前設計結論與未定事項。
-3. `LOOTY_MVP.md`: MVP 產品邊界、目前不做什麼、下一步。
-4. `FLASH.md`: Flash 大系統背景，只看責任邊界，不當作 repo 細節真相。
+1. `README.md`
+   - 目前 repo 實作、資料流、部署、DB 現況與限制。
+2. `GAME_PLATFORM_INTEGRATION.md`
+   - 給 Looty AI 與做遊戲的 AI 看，說明遊戲要怎麼接 Looty、哪些責任不能混在一起。
+3. `LOOTY_MVP.md`
+   - MVP 產品邊界、目前不做什麼、下一步。
+4. `FLASH.md`
+   - Flash 大系統背景，只看責任邊界，不當作 repo 細節真相。
 
 ## 專案定位
 
-Looty 負責：
+Looty 目前負責：
 
-- 顯示公開遊戲 Lobby
-- 透過 `/game/?slug=<slug>` 把玩家送進對應遊戲
-- 提供輕量 Admin 後台管理遊戲上架資料
+- 顯示公開遊戲 Lobby。
+- 用 `/game/?slug=<slug>` 把玩家送進對應遊戲。
+- 提供輕量 Admin 管理遊戲上架資料。
+- 建立平台帳號、平台錢包、game session、game round 的 DB 骨架。
 
-Looty 既有 MVP 尚未包含：
+Looty 目前不負責：
 
-- 遊戲本體玩法與前端表現
-- 即時多人同步
-- 博奕結果裁決 / RNG
-- 錢包、ledger、settlement
-- 完整會員中心與點數流水
+- 遊戲本體玩法與前端表現。
+- 即時多人同步。
+- 博奕結果裁決 / RNG。
+- 完整會員中心 UI。
+- 完整 ledger / settlement 系統。
+- 讓前端直接寫玩家或錢包資料。
 
-下一階段會在 Looty Platform 內實作玩家身份、game session 與平台錢包 / wallet interface。遊戲本體仍不應自己登入玩家或直接改錢包。長期方向請看 `GAME_PLATFORM_INTEGRATION.md`。
+遊戲本體不應自己登入玩家，也不應直接改玩家餘額。細節看 `GAME_PLATFORM_INTEGRATION.md`。
 
 ## 目前狀態
 
-截至 2026-07-09：
+截至 2026-07-10：
 
 - 技術棧是 Vanilla JS + Vite，多頁靜態站。
-- Auth / Database / View 走 Supabase。
-- Hosting 走 Cloudflare Pages，GitHub `main` 可自動部署到 `looty-git`。
+- Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
+- Auth / Database / View 走 Looty Supabase：`lsazydefvnuqglultqii`。
 - Lobby 直接讀 `public_games_v1`。
 - Game Loader 直接用 `slug` 查 `public_games_v1`，再用 `launch_url` 載入 iframe。
 - 前台會員登入已從 Lobby 移除，首頁維持純公開遊戲入口。
@@ -43,48 +49,20 @@ Looty 既有 MVP 尚未包含：
 - Admin 可管理 `games` 的基本上架欄位。
 - 前台 / Loader / Admin 共用錯誤視窗與 `LOOTY-*` 錯誤代碼。
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
+- 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
+- 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
 
-目前 Looty 處在 MVP 可用後的整理與驗證階段，不是架構重做階段。
+現在不是重做架構或補大型功能的階段。
 
-現在的重點是把平台和遊戲的責任邊界先定清楚，方便未來外部遊戲接進 Looty，也方便 Looty 自己的遊戲接到外部平台。
+短期重點：
 
-現在主要要做的是：
-
-1. 繼續使用目前 Cloudflare Pages 網址測試與整理內容。
+1. 保持首頁 -> Game Loader -> 遊戲啟動的主路徑穩定。
 2. 用電腦版 Admin 管理遊戲上架資料。
-3. 確認玩家主路徑穩定：首頁看到遊戲 -> 點進 Loader -> 遊戲成功啟動。
-4. 文件先釐清 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
-5. 發現具體問題時，只修該問題，不順手擴大成會員、錢包、正式網域、Cloudflare Access 或大型 Admin 改版。
-
-責任方向：
-
-- Looty Platform 負責玩家身份、game session、平台錢包介面、交易規則與遊戲上架資料。
-- Game 負責畫面、玩法、局號、下注/派獎請求時機，不自己登入玩家，也不直接改錢包。
-- Game Gateway 負責平台和遊戲之間的 session、wallet API、第三方平台 API 轉接。
-- Wallet Interface 負責固定錢包語意，讓後面可以接 Looty wallet tables、Supinova 或第三方平台 wallet API，而不讓遊戲重寫。
-- 詳細規則看 `GAME_PLATFORM_INTEGRATION.md`。
-
-帳號與錢包方向：
-
-- Guest 由 Looty Platform 建立，不由遊戲建立，之後對應到 `player_accounts`。
-- 正式帳號走 Supabase Auth，登入後也對應同一套 `player_accounts`。
-- Guest 升級正式帳號時，應接回原本玩家資料，不要換成全新玩家。
-- 錢包是 Looty 平台錢包，不是每個遊戲自己一套錢包。
-- 錢包資料方向是 `wallet_accounts` + `wallet_transactions`，不能只存一個 balance。
-- 下注、派彩、退款都要走平台後端 / DB RPC / API，並用 `idempotency_key` 避免重複扣款或重複派彩。
-- 第一階段不先接 Supinova；未來如果要接，放在 Wallet Interface 後面的 adapter。
-
-## 技術限制
-
-除非明確要求，不要改以下前提：
-
-- 不改成 React / Vue / Next.js。
-- 不改 Cloudflare Pages 靜態部署架構。
-- 不新增本地遊戲白名單。
-- 不把 Flash 兄弟模組責任寫進 Looty。
-- 不恢復前台會員登入 UI，除非先重新設計會員入口。
+3. 讓文件清楚分出 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
+4. 下一步設計最小 `create_game_session` / wallet RPC 或後端流程。
+5. 不先做完整會員中心、不恢復前台登入 UI、不接 Supinova、不切正式網域。
 
 ## 路由
 
@@ -122,16 +100,16 @@ Looty 既有 MVP 尚未包含：
 
 ## Lobby 資料流
 
-Lobby 流程：
+流程：
 
-1. `src/main.js` 呼叫 `initLobbyPage()`
-2. `src/pages/lobby/index.js` render Lobby shell
-3. `src/pages/lobby/data.js` 查 `public_games_v1`
-4. `src/pages/lobby/game-grid.js` render 遊戲卡片
+1. `src/main.js` 呼叫 `initLobbyPage()`。
+2. `src/pages/lobby/index.js` render Lobby shell。
+3. `src/pages/lobby/data.js` 查 `public_games_v1`。
+4. `src/pages/lobby/game-grid.js` render 遊戲卡片。
 
 Lobby 目前不顯示分類 tabs，不做前端分類分頁，直接顯示所有公開可玩的遊戲。
 
-Lobby 目前讀取欄位：
+Lobby 讀取欄位：
 
 - `id`
 - `slug`
@@ -146,13 +124,13 @@ Lobby 目前讀取欄位：
 
 ## Game Loader 資料流
 
-Game Loader 流程：
+流程：
 
-1. 從 query string 取得 `slug`
-2. 查 `public_games_v1`
-3. 取出 `launch_url`
-4. 用 `src/lib/urls.js` 檢查 URL
-5. 以 iframe 載入遊戲
+1. 從 query string 取得 `slug`。
+2. 查 `public_games_v1`。
+3. 取出 `launch_url`。
+4. 用 `src/lib/urls.js` 檢查 URL。
+5. 以 iframe 載入遊戲。
 
 `launch_url` 只接受：
 
@@ -189,8 +167,8 @@ Admin games：
 
 - 直接操作 `games` table。
 - 可列出、建立、編輯、刪除遊戲。
-- 目前以電腦版後台為主，已能完成遊戲上架、下架、啟動網址、排序等核心管理操作。
-- Admin 手機版優化先不列為待辦，等實際需要再處理。
+- 可設定上架狀態、啟動網址、排序。
+- 目前以電腦版後台為主，手機版優化不是目前待辦。
 - 遊戲列表用 DOM 建構，不用資料字串拼 `innerHTML`。
 - `launch_url` 顯示前會先正規化。
 - 刪除成功後局部更新列表，不整頁 reload。
@@ -214,7 +192,7 @@ Admin form：
 
 ## 資料契約
 
-`games` 至少應具備：
+`games` 是 Admin 管理來源，欄位：
 
 - `id`
 - `name`
@@ -227,7 +205,7 @@ Admin form：
 - `sort_order`
 - `created_at`
 
-`public_games_v1` 至少應暴露：
+`public_games_v1` 是前台公開讀取來源，欄位：
 
 - `id`
 - `slug`
@@ -239,7 +217,7 @@ Admin form：
 - `launch_url`
 - `sort_order`
 
-目前預期的 view 邏輯：
+目前預期 view 邏輯：
 
 ```sql
 SELECT
@@ -263,6 +241,50 @@ ORDER BY sort_order, created_at DESC;
 前台讀 `public_games_v1` 時，應把資料視為已公開、可顯示、可啟動。
 前台不要再自行判斷 `published`，也不要回頭引入本地白名單。
 
+## 平台骨架 DB
+
+2026-07-10 已套用：
+
+- `20260709123000_drop_legacy_player_balance.sql`
+- `20260709124500_drop_unused_access_settings.sql`
+- `20260709170000_create_platform_account_wallet_core.sql`
+
+目前 public schema 包含：
+
+- `admin_users`
+- `games`
+- `public_games_v1`
+- `player_accounts`
+- `wallet_accounts`
+- `wallet_transactions`
+- `game_sessions`
+- `game_rounds`
+
+5 張平台骨架表：
+
+- `player_accounts`: 玩家身份，Guest 和正式帳號都用這張。
+- `wallet_accounts`: 玩家平台錢包，目前是一個玩家一種幣別一個 active wallet。
+- `wallet_transactions`: 錢包流水，包含 `balance_before`、`balance_after`、`idempotency_key`。
+- `game_sessions`: 玩家進遊戲時的平台 session，只存 `launch_token_hash`，不存明文 token。
+- `game_rounds`: 遊戲局號，可對應下注、派彩、退款紀錄。
+
+目前沒有做：
+
+- 沒有復活 `players`。
+- 沒有復活 `player_balances`。
+- 沒有改 `games`。
+- 沒有改 `admin_users`。
+- 沒有改 `public_games_v1`。
+- 沒有建立會員 UI。
+- 沒有讓前端直接寫錢包。
+- 沒有接 Supinova。
+
+安全現況：
+
+- 5 張平台骨架表都有開 RLS。
+- 目前沒有開前端讀寫 policy。
+- 未來玩家、Guest、錢包初始化應走 DB RPC、後端或 Gateway。
+
 ## 環境變數
 
 本機與 Cloudflare Pages 都需要：
@@ -272,6 +294,8 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
 
+不要把完整 anon key、service role key、access token、DB password 寫進文件或對話。
+
 ## Supabase 作業
 
 Looty 的 Supabase project ref：
@@ -280,23 +304,19 @@ Looty 的 Supabase project ref：
 lsazydefvnuqglultqii
 ```
 
-AI / Codex 操作 Supabase 時，先確認目標是 Looty，不要沿用其他專案的 CLI 預設登入。
-
-目前專案已有：
-
-- `supabase/config.toml`: Looty 的本地 Supabase CLI 骨架。
-- Looty 本地 Supabase link: `lsazydefvnuqglultqii`。
-- `.env.supabase.local.example`: Looty 私密 Supabase env 範本。
-- `scripts/supabase-looty.cmd`: Looty 專用 Supabase CLI 包裝指令，會載入本地 token 並先檢查 Looty 專案。
-- `.codex/config.toml`: Looty 專案限定的 Supabase MCP 設定，先保留 read-only 設定，但目前不授權啟用。
-
-確認 CLI 連到正確專案：
+操作遠端 Supabase 前必跑：
 
 ```powershell
 .\scripts\supabase-looty.cmd projects list
 ```
 
-確認結果裡 `Looty` / `lsazydefvnuqglultqii` 應該是 `linked: true`。
+確認結果裡：
+
+- `name` 是 `Looty`
+- `ref` 是 `lsazydefvnuqglultqii`
+- `linked` 是 `true`
+
+如果只看到 `arua`，立刻停止。
 
 本機第一次設定：
 
@@ -304,35 +324,28 @@ AI / Codex 操作 Supabase 時，先確認目標是 Looty，不要沿用其他�
 copy .env.supabase.local.example .env.supabase.local
 ```
 
-然後在 `.env.supabase.local` 填 Looty 專用 `SUPABASE_ACCESS_TOKEN` 與 `SUPABASE_DB_PASSWORD`。不要把 `.env.supabase.local` 上傳或貼到對話裡。
+然後在 `.env.supabase.local` 填 Looty 專用：
 
-目前 MCP URL：
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_ID=lsazydefvnuqglultqii`
+- `SUPABASE_DB_PASSWORD`
+
+`.env.supabase.local` 只放本機，不提交、不貼到對話裡。
+
+原則：
+
+- Looty 遠端 Supabase 操作優先使用 `.\scripts\supabase-looty.cmd`。
+- 不要直接依賴全域 `supabase login`。
+- 不要使用 Aura / arua 的 CLI 狀態操作 Looty。
+- 要改 DB 前，先產 SQL migration 給使用者確認。
+- 不要留下未確認的 baseline / 大重建 migration 草稿。
+- Supabase MCP 暫不授權、不作為主要操作方式，也不要給其他專案共用 Looty MCP。
+
+目前 MCP URL 只作備註，不當主流程：
 
 ```text
 https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 ```
-
-注意：
-
-- read-only MCP 只用來看 schema / table / policy，不直接改 DB。
-- Looty 目前主力使用 Supabase CLI，不使用 MCP 當主要操作方式。
-- MCP 權限暫不授權；如果未來要開，必須綁定 Looty 的 `project_ref=lsazydefvnuqglultqii`，不要拿同一個 MCP 給其他專案共用。
-- 要改 DB 前，先產 SQL migration 給使用者確認。
-- 不要留下未確認的 baseline / 大重建 migration 草稿；這類檔案容易被誤套用。
-- 不要拿 Aura 或其他專案的 Supabase CLI link 來操作 Looty。
-- Supabase CLI 登入 token 在這台 Windows 上是全域狀態，不是專案檔的一部分；不要只相信 profile 名稱。
-- Looty 遠端 Supabase 操作優先使用 `.\scripts\supabase-looty.cmd`，不要直接依賴全域 `supabase login`。
-- `.env.supabase.local` 只放本機，不提交；內容需要 `SUPABASE_ACCESS_TOKEN`、`SUPABASE_PROJECT_ID=lsazydefvnuqglultqii`、`SUPABASE_DB_PASSWORD`。
-- 如果 `projects list` 看不到 `Looty` / `lsazydefvnuqglultqii`，或只看到 `arua`，立刻停止；代表目前 CLI token 不是 Looty 帳號。
-- 遇到上面狀況時，不要反覆叫使用者重登；先確認 `.env.supabase.local` 是否是 Looty token。
-- Codex 目前 session 不一定會立刻載入新 MCP；通常需要重開 Codex session 後再授權 Supabase。
-- 若 MCP 工具沒有出現，可用 `.\scripts\supabase-looty.cmd` 做 schema 檢查，但必須先確認 `projects list` 是 Looty。
-- 2026-07-09 已用 Dashboard SQL Editor 清掉舊 `players`、`player_balances`、`ensure_my_player_v1()`。
-- 2026-07-09 已用 DB password 重新 link pooler；CLI 在使用正確 Looty token 時可讀寫 Looty DB。
-- 2026-07-09 已用 CLI 清掉未使用的 `access_whitelist`、`site_settings`。
-- 2026-07-09 已刪除未追蹤的 `20260709131000_baseline_core_schema.sql` 草稿；目前不保留 baseline migration。
-- 2026-07-09 已在本機建立 `.env.supabase.local` 並測試 `.\scripts\supabase-looty.cmd projects list` 成功看到 `Looty` / `lsazydefvnuqglultqii` / `linked: true`。
-- 2026-07-10 已建立 `20260709170000_create_platform_account_wallet_core.sql` migration 草稿，內容是平台帳號、錢包、交易流水、game session、game round 骨架；使用者已確認方向，但尚未套用到遠端 Supabase。
 
 ## 開發與建置
 
@@ -356,16 +369,17 @@ npm run smoke
 
 Smoke 目標：
 
-- 先跑 `npm run build`
-- 啟動本機 Vite
-- 啟動 headless Chrome / Edge
-- 驗首頁、Loader 缺 slug、Admin login、共用錯誤視窗
+- 先跑 `npm run build`。
+- 啟動本機 Vite。
+- 啟動 headless Chrome / Edge。
+- 驗首頁、Loader 缺 slug、Admin login、共用錯誤視窗。
 
-目前已知：
+2026-07-10 已確認：
 
-- `npm run build` 可通過。
-- 某些本機 Windows Chrome / Edge CDP 環境可能讓 `npm run smoke` 卡在 browser 自動化指令；腳本已加 timeout，應快速失敗而不是卡死。
-- 若要指定 browser，用 `SMOKE_BROWSER_PATH`。
+- `npm run build` 通過。
+- `npm run smoke` 通過。
+
+若要指定 browser，用 `SMOKE_BROWSER_PATH`。
 
 ## Cloudflare Pages
 
@@ -386,9 +400,8 @@ Smoke 目標：
 - Production hostname: `looty-git.pages.dev`
 - Custom domains: 目前未設定
 
-目前可先使用 Cloudflare Pages 現有網址，不需要先更換或綁定正式網域。正式網域等確定要正式營運前再決定。
-
-舊的 Direct Upload Pages 專案先保留，不要直接覆蓋或刪除；退場方式也等正式營運前再決定。
+目前可先使用 Cloudflare Pages 現有網址，不需要先更換或綁定正式網域。
+正式網域與舊 Direct Upload Pages 退場方式，等正式營運前再決定。
 
 2026-07-09 production smoke check：
 
@@ -402,19 +415,11 @@ Cloudflare 操作提醒：
 - 這台 Chrome 可能有多個 Cloudflare 帳號；操作 Looty 前先確認左上角帳號是 `pixelgd.games@gmail.com`。
 - 不要在未確認帳號時修改 Pages、Workers、Zero Trust 或環境變數。
 
-若遊戲本體放在 `public/game/<slug>/index.html`，建置後對外路徑是：
-
-```text
-/game/<slug>/index.html
-```
-
 ## Cloudflare Access 選用加固
 
 目前 Admin 已有 Supabase Google OAuth + `admin_users` email 白名單保護，MVP 階段已足夠。
 
 Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。之後如果要再加一層入口保護，可以把 `/admin/*` 納入 Cloudflare Access，讓使用者進入 Admin HTML 前先通過 Cloudflare。
-
-2026-07-09 已確認 `looty-git.pages.dev/admin/*` 目前沒有 Cloudflare Access 保護，這是預期狀態。
 
 若要設定，預計：
 
@@ -426,15 +431,13 @@ Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。�
   - `johnnyli1226@gmail.com`
 - 前端 `admin_users` 白名單檢查保留，作為應用層保護。
 
-正式網域綁定後，如果有啟用 Cloudflare Access，也要把正式網域的 `/admin/*` 納入保護。
-
 ## 未來可改善
 
-以下是後續可改善事項，不是目前 MVP blocker：
+以下不是目前 blocker：
 
-- `admin_users` 仍以 email 白名單判斷；目前可用，未來可視需要升級為 auth user id。
+- `admin_users` 之後可視需要從 email 白名單升級為 auth user id。
 - 前台會員登入停用，尚未設計新的 `/me` 或會員中心。
-- Cloudflare Access 未啟用；目前不是 MVP blocker，可視安全需求再加。
+- Cloudflare Access 未啟用，可視安全需求再加。
 - 正式網域與舊 Direct Upload Pages 退場方式等正式營運前再決定。
 - Automated tests 還不完整。
 
@@ -445,3 +448,4 @@ Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。�
 3. Loader 啟動失敗時，優先查 `public_games_v1` 是否查得到該 `slug`。
 4. 調整公開規則時，優先改 DB view / policy，不要加本地硬編碼。
 5. 改部署前，先保住目前可用的靜態輸出流程。
+6. 做遊戲接入前，先讀 `GAME_PLATFORM_INTEGRATION.md`。

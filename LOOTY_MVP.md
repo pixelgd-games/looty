@@ -38,6 +38,8 @@ Looty MVP 要先把這條主路徑做穩：
 - 2026-07-09 已確認 `looty-git.pages.dev` production 可載入，Cloudflare 帳號為 `pixelgd.games@gmail.com`。
 - Cloudflare env vars 已指向 Looty Supabase `lsazydefvnuqglultqii`。
 - `npm run build` 可成功輸出多頁靜態站。
+- 2026-07-10 已套用平台骨架 migration，新增玩家帳號、平台錢包、交易流水、game session、game round 的 DB 地基。
+- 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
 
@@ -50,11 +52,11 @@ Looty MVP 要先把這條主路徑做穩：
 1. 用 Admin 上架 / 下架 / 編輯遊戲資料。
 2. 確認 Lobby 能看到公開遊戲。
 3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
-4. 套用已確認的 `20260709170000_create_platform_account_wallet_core.sql`，建立平台帳號、錢包、交易流水與 session 骨架。
-5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的責任邊界。
+4. 設計最小可用的 `create_game_session` / wallet RPC 或後端流程草稿。
+5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
 6. 有具體問題時再針對該問題修正。
 
-現在不要主動切正式網域、重做 Admin、恢復會員、加錢包或把 Flash 兄弟模組接進來。
+現在不要主動切正式網域、重做 Admin、恢復會員中心 UI、做完整錢包功能或把 Flash 兄弟模組接進來。
 
 ## 目前前台策略
 

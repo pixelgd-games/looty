@@ -22,7 +22,7 @@ Flash 是一套由多個可獨立開發、可依需求接入、也可彼此串�
 - **Aura**：一般遊戲 authoritative game logic server
 - **Hype5**：即時多人同步 / 房間同步 / room engine
 - **FuGhost**：博奕遊戲結果裁決 / 機率運算 / adjudication engine
-- **Spinnova**：錢包 / 經濟結算 / ledger / settlement system
+- **Spinnova**：完整錢包 / 經濟結算 / ledger / settlement system
 
 ## 模組部署與基礎設施
 
@@ -127,7 +127,7 @@ Looty 主要負責：
 
 - 提供玩家進入遊戲的入口
 - 管理遊戲列表 / game list / game lobby
-- 處理玩家身份與平台帳號相關流程
+- 處理玩家身份、平台帳號與輕量平台錢包介面
 - 承接官方挑戰、排行榜、平台型功能
 - 提供 admin / 後台管理介面
 - 作為平台層與其他遊戲模組的接入點
@@ -140,7 +140,7 @@ Looty 不負責：
 - 即時多人房間同步
 - 博奕遊戲結果裁決
 - 機率運算與 RNG 裁決
-- 錢包 / ledger / 經濟 settlement
+- 完整 ledger / 經濟 settlement
 - 遊戲內主要表現、動畫、音效與玩法前端
 
 這些責任應由其他模組處理，例如：
