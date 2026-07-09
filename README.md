@@ -51,6 +51,7 @@ Looty 目前不負責：
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
 - 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
+- Supabase Edge Function `looty-gateway` 已部署，第一版只提供 `create-session`。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -62,7 +63,7 @@ Looty 目前不負責：
 1. 保持首頁 -> Game Loader -> 遊戲啟動的主路徑穩定。
 2. 用電腦版 Admin 管理遊戲上架資料。
 3. 讓文件清楚分出 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
-4. 下一步設計 Gateway / 後端如何安全呼叫 `create_game_session` 與 wallet RPC。
+4. 下一步決定 `/game/?slug=...` 是否要接 `looty-gateway` 建立 session。
 5. 不先做完整會員中心、不恢復前台登入 UI、不接 Supinova、不切正式網域。
 
 ## 路由
@@ -98,6 +99,7 @@ Looty 目前不負責：
 - `src/styles/theme.css`: 前台基礎樣式。
 - `src/styles/lobby.css`: Lobby 樣式。
 - `public/hero/looty-hero-main.webp`: 首頁主視覺。
+- `supabase/functions/looty-gateway/index.ts`: Looty Gateway Edge Function。
 
 ## Lobby 資料流
 
@@ -289,6 +291,53 @@ ORDER BY sort_order, created_at DESC;
 - `create_game_session`、`wallet_get_balance`、`wallet_bet`、`wallet_payout`、`wallet_refund`、`close_game_round` 目前只 grant 給 `service_role`。
 - `looty_hash_launch_token`、`looty_active_session`、`looty_apply_wallet_transaction` 是內部 helper，目前只保留 owner execute。
 - 未來玩家、Guest、錢包初始化應走後端或 Gateway，不要讓前端直接寫 table。
+
+## Looty Gateway
+
+2026-07-10 已部署 Supabase Edge Function：
+
+```text
+https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway
+```
+
+目前支援：
+
+```http
+POST /functions/v1/looty-gateway/create-session
+```
+
+輸入：
+
+```json
+{
+  "slug": "color-guess",
+  "currency": "POINT",
+  "expires_in_seconds": 3600
+}
+```
+
+輸出：
+
+```json
+{
+  "session_id": "...",
+  "game_id": "...",
+  "player_account_ref": "...",
+  "launch_token": "...",
+  "account_type": "guest",
+  "currency": "POINT",
+  "expires_at": "..."
+}
+```
+
+現況：
+
+- Function `verify_jwt` 是 `true`，沒有授權 header 會被 Supabase 擋下。
+- Function 內部使用 `SUPABASE_SERVICE_ROLE_KEY` 呼叫 RPC。
+- service role key 不放進前端。
+- 已驗證未授權呼叫回 `401`。
+- 已驗證不存在 slug 回 `404 game is not available`，不新增資料。
+- 目前前端 Loader 還沒接這個 Gateway，仍維持原本 iframe 啟動流程。
 
 ## 環境變數
 

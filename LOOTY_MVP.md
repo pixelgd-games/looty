@@ -40,6 +40,7 @@ Looty MVP 要先把這條主路徑做穩：
 - `npm run build` 可成功輸出多頁靜態站。
 - 2026-07-10 已套用平台骨架 migration，新增玩家帳號、平台錢包、交易流水、game session、game round 的 DB 地基。
 - 2026-07-10 已套用第一版 game session / wallet RPC，目前只開給 `service_role`。
+- 2026-07-10 已部署 Supabase Edge Function `looty-gateway`，第一版只提供 `create-session`。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -53,7 +54,7 @@ Looty MVP 要先把這條主路徑做穩：
 1. 用 Admin 上架 / 下架 / 編輯遊戲資料。
 2. 確認 Lobby 能看到公開遊戲。
 3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
-4. 設計 Gateway / 後端如何安全呼叫 `create_game_session` / wallet RPC。
+4. 決定 Game Loader 是否接 `looty-gateway/create-session`。
 5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
 6. 有具體問題時再針對該問題修正。
 

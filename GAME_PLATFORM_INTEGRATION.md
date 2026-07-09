@@ -32,6 +32,7 @@ Lobby
 
 目前已套用 DB 平台骨架，並已建立第一版 game session / wallet RPC。
 這些 RPC 目前只開給 `service_role`，還沒有開給前端直接呼叫。
+Supabase Edge Function `looty-gateway` 已部署，第一版只提供 `create-session`。
 
 所以現階段遊戲接 Looty，先做到：
 
@@ -42,6 +43,7 @@ Lobby
 - 不要求遊戲自己讀 Supabase Auth。
 - 不直接寫玩家或錢包資料。
 - 之後要透過 Looty Gateway / 後端呼叫 RPC，不把 service role key 放進遊戲前端。
+- 現在已有 `looty-gateway/create-session`，但 Loader 尚未接入。
 
 ## 給遊戲 AI 的最短規則
 
@@ -323,6 +325,52 @@ settled_at
 
 每一局下注、派彩、退款都要能追到 session、game、round。
 
+## Gateway endpoint
+
+目前已部署：
+
+```http
+POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-session
+```
+
+要求：
+
+- Supabase Function `verify_jwt` 為 `true`。
+- 呼叫端需要帶 Supabase JWT / anon authorization header。
+- Function 內部才使用 service role 呼叫 DB RPC。
+- service role key 不能進前端、遊戲端或公開 repo。
+
+輸入：
+
+```json
+{
+  "slug": "color-guess",
+  "currency": "POINT",
+  "expires_in_seconds": 3600
+}
+```
+
+輸出：
+
+```json
+{
+  "session_id": "...",
+  "game_id": "...",
+  "player_account_ref": "...",
+  "launch_token": "...",
+  "account_type": "guest",
+  "currency": "POINT",
+  "expires_at": "..."
+}
+```
+
+注意：
+
+- 目前只做 create session。
+- 尚未提供公開 wallet bet / payout / refund endpoint。
+- Loader 尚未改成使用 Gateway。
+- 不存在 slug 會回 `404 game is not available`，不建立 session。
+
 ## 建議 API / RPC
 
 DB 層第一版已建立：
@@ -483,6 +531,10 @@ Looty Platform
 - `20260710010000_create_game_session_wallet_rpc.sql`
 - `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
 
+已部署 Edge Function：
+
+- `looty-gateway`
+
 注意：
 
 - `games` / `public_games_v1` / `admin_users` 是目前前台與 Admin 正在使用的核心資料。
@@ -504,12 +556,12 @@ Looty Platform
 - `wallet_accounts.balance` 是否只是目前餘額快取，或是否要完全以 `wallet_transactions` 重算。
 - 第一版是否立刻使用 `locked_balance`。
 - 第一版是否需要 `wallet_type`。
-- Game Gateway 第一版放在 Edge Function，還是外部 API server。
+- wallet endpoint 第一版要放在 Edge Function，還是外部 API server。
 
 ## 實作提醒
 
 - 不要先做完整會員中心再做遊戲 session。
-- 下一步應設計 Gateway / 後端如何安全呼叫 `create_game_session`。
+- 下一步應決定 Loader 是否接 `looty-gateway/create-session`。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
 - Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前 MVP blocker。
