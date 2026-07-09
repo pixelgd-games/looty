@@ -124,7 +124,7 @@ Game 負責：
 - 遊戲玩法。
 - 產生或管理局號 / round。
 - 接收平台給的 session / launch token。
-- 在未來 API 完成後，回報下注、派彩、退款、結算事件。
+- 需要接 wallet 時，透過 Looty Gateway 回報下注、派彩、退款、結算事件。
 - 顯示平台回傳的餘額與結果。
 
 Game 不負責：
@@ -275,8 +275,8 @@ looty_gateway_url
 1. 從 URL 讀取 `looty_launch_token`。
 2. 從 URL 讀取 `looty_gateway_url`。
 3. 若缺少這兩個值，維持原本 demo / free-play 流程。
-4. 若存在這兩個值，才啟用 Looty wallet adapter。
-5. wallet adapter 只呼叫 Gateway，不直接碰 Supabase。
+4. 若存在這兩個值，可以先保存於執行中的記憶體狀態。
+5. 不要立刻啟用真實 wallet 扣款或派彩，除非使用者明確要求且授權交接方式已定案。
 
 啟動目標：
 
@@ -302,6 +302,15 @@ Game
 
 遊戲只認 `launch_token`。
 遊戲不要拿 Supabase auth token，也不要知道玩家 email、Google 帳號、後台權限或真實身份。
+
+重要限制：
+
+- Loader 目前只傳 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url`。
+- Loader 目前沒有把 Supabase anon key、JWT、Authorization header 或任何 service role key 傳給遊戲。
+- `looty-gateway` 目前 `verify_jwt = true`，所以 wallet endpoints 需要授權 header。
+- 因此，遊戲前端目前不能只靠 `looty_launch_token` 直接呼叫 wallet endpoints。
+- 遊戲 AI 不要自己發明授權方式，也不要去抓 Looty bundle 裡的 env key。
+- 下一步若要讓遊戲正式呼叫 wallet endpoints，要先決定授權交接方式。
 
 ## Session payload 建議
 
@@ -429,6 +438,72 @@ Wallet endpoint 共通要求：
 - `bet` / `payout` / `refund` 要帶 `round_id`、`amount`、`idempotency_key`。
 - `metadata` 可選，但必須是 object。
 - service role key 只存在 Edge Function 環境，不進遊戲前端。
+
+目前授權狀態：
+
+- Looty Loader 呼叫 `create-session` 時，使用 Looty 前端自己的 Supabase client。
+- Loader 不會把 Supabase anon key 或 JWT 傳給 iframe 遊戲。
+- 因此，下列 wallet endpoint 範例是 **Gateway 契約範例**，不是表示遊戲前端現在已經能直接呼叫。
+- 若要讓遊戲前端直接呼叫，必須先補一個明確設計，例如短期 gateway token、由 Loader 代理、或讓遊戲 repo 以安全方式配置公開 anon key。
+
+`balance` body：
+
+```json
+{
+  "launch_token": "..."
+}
+```
+
+`bet` body：
+
+```json
+{
+  "launch_token": "...",
+  "round_id": "round-001",
+  "amount": 10,
+  "idempotency_key": "game-round-001-bet",
+  "metadata": {
+    "source": "game"
+  }
+}
+```
+
+`payout` body：
+
+```json
+{
+  "launch_token": "...",
+  "round_id": "round-001",
+  "amount": 18,
+  "idempotency_key": "game-round-001-payout",
+  "metadata": {
+    "source": "game"
+  }
+}
+```
+
+`refund` body：
+
+```json
+{
+  "launch_token": "...",
+  "round_id": "round-001",
+  "amount": 10,
+  "idempotency_key": "game-round-001-refund",
+  "metadata": {
+    "reason": "round_cancelled"
+  }
+}
+```
+
+`close-round` body：
+
+```json
+{
+  "launch_token": "...",
+  "round_id": "round-001"
+}
+```
 
 注意：
 
@@ -632,7 +707,7 @@ Looty Platform
 - `wallet_accounts.balance` 是否只是目前餘額快取，或是否要完全以 `wallet_transactions` 重算。
 - 第一版是否立刻使用 `locked_balance`。
 - 第一版是否需要 `wallet_type`。
-- wallet endpoint 第一版要放在 Edge Function，還是外部 API server。
+- 遊戲前端呼叫 wallet endpoint 時，授權 header 要由 Loader 代理、短期 gateway token、遊戲 repo env，還是其他方式處理。
 
 ## 實作提醒
 

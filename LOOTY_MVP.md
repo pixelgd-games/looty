@@ -42,6 +42,7 @@ Looty MVP 要先把這條主路徑做穩：
 - 2026-07-10 已套用第一版 game session / wallet RPC，目前只開給 `service_role`。
 - 2026-07-10 已部署 Supabase Edge Function `looty-gateway`，支援 `create-session` 與第一版 wallet endpoints。
 - 2026-07-10 Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session 並把 Looty session 參數附加到 iframe URL。
+- 遊戲前端呼叫 wallet endpoints 的授權交接方式尚未定案。
 - 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
@@ -56,7 +57,7 @@ Looty MVP 要先把這條主路徑做穩：
 1. 用 Admin 上架 / 下架 / 編輯遊戲資料。
 2. 確認 Lobby 能看到公開遊戲。
 3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
-4. 挑一個乾淨的遊戲 repo，依 Looty session 參數正式接入 wallet endpoints。
+4. 先決定遊戲前端呼叫 wallet endpoints 的授權交接方式，再挑乾淨遊戲 repo 做正式接入。
 5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
 6. 有具體問題時再針對該問題修正。
 

@@ -94,6 +94,7 @@
 - Game session / wallet RPC 已建立，目前只開給 `service_role`，不要從前端直接呼叫。
 - Supabase Edge Function `looty-gateway` 已部署，支援 `create-session` 與第一版 wallet endpoints。
 - Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session，並把 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url` 傳給 iframe。
+- Loader 目前沒有把 Supabase anon key 或 JWT 傳給 iframe；遊戲前端呼叫 wallet endpoints 的授權交接方式尚未定案。
 - 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 
 ## 最近確認

@@ -56,6 +56,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
 - 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
 - Supabase Edge Function `looty-gateway` 已部署，支援 `create-session` 與第一版 wallet endpoints。
+- Wallet endpoints 已可由 Gateway 轉接 RPC，但遊戲前端如何帶授權 header 尚未定案。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -363,6 +364,7 @@ POST /functions/v1/looty-gateway/close-round
 - 已驗證不存在 slug 回 `404 game is not available`，不新增資料。
 - 已驗證 Gateway 可完成 create-session、balance、payout、bet、idempotency、close-round 流程。
 - 前端 Loader 已接 `create-session`，但舊遊戲不需要立刻改程式。
+- Loader 目前沒有把 Supabase anon key 或 JWT 傳給 iframe，因此遊戲前端不能只靠 `looty_launch_token` 直接呼叫 wallet endpoints。
 
 ## 環境變數
 
