@@ -249,6 +249,24 @@ created_at
 第一版不先做完整銀行式 double-entry ledger。
 之後需要正式 settlement、平台資金池、供應商結算或更嚴格審計時，再升級。
 
+## 非博弈遊戲與入場模式（未實作）
+
+遊戲類型不等於收費方式。未來 Looty Platform 可為每款遊戲定義：
+
+- `free`：免費進入，不扣 POINT。
+- `points_entry`：Looty 扣除指定 POINT，成功後才發放入場資格。
+- `paid_purchase`：真實付款由 Looty 的金流與訂單層處理，遊戲只接收已授權的入場結果。
+
+責任邊界：
+
+- Looty 決定價格、扣款、退款、付款結果與入場資格。
+- Game 只接收平台授權，不自行收費、不決定匯率、不直接修改餘額。
+- 重新整理或斷線重連不能重複收費；每次購買或入場扣款都要有 idempotency key。
+- 非博弈交易未來應使用 `entry_fee / purchase / reward / refund`，不要把一般入場費偽裝成 `bet`。
+- Demo、Paid、Bonus POINT 的購買、使用、退款、有效期限與可否兌現必須由 Looty Platform 分開定義。
+
+目前 DB 與 Gateway 尚未提供上述入場模式與非博弈交易類型。現在只有 `wallet_mode = demo`、10,000 Demo POINT 與既有 wallet endpoints；遊戲 AI 不要自行實作或假設這些未來規格已經可用。
+
 ## 遊戲啟動方向
 
 目前已實作的啟動方式：

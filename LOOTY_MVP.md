@@ -102,6 +102,26 @@ Game
 
 Looty 核心只固定玩家 / Guest、遊戲目錄、launch session、round、idempotency、統一錢包語意與查帳資訊。儲值、提款、KYC、正式 ledger、settlement 與第三方平台差異放在外部系統或 adapter，不要先由 Looty 自己承擔。
 
+### 未來營運入場與 POINT 方向（未實作）
+
+遊戲類型與收費方式要分開。未來每款遊戲可有獨立的入場模式：
+
+- `free`：免費進入，只建立 session，不扣 POINT。
+- `points_entry`：由 Looty 扣除指定 POINT 後發放入場資格。
+- `paid_purchase`：真實付款由平台金流與訂單系統處理，成功後再轉成平台 POINT 或購買資格。
+
+遊戲不接觸現金、匯率、付款訂單，也不自行發放或修改 POINT。非博弈遊戲不應硬套 `bet / payout`，未來應使用 `entry_fee / purchase / reward / refund` 等交易語意，並用 idempotency 避免重新整理或斷線重連時重複扣款。
+
+POINT 性質至少要能區分：
+
+- Demo POINT：測試使用，不可提款或兌現。
+- Paid POINT：玩家付款取得，購買、退款與有效期限要由平台定義。
+- Bonus POINT：平台贈送，使用限制與有效期限要由平台定義。
+
+目前只有 `wallet_mode = demo` 與新錢包 10,000 Demo POINT。上述入場模式、POINT 分類、真實付款與非博弈交易類型都尚未實作，正式施工前要再確認規則並使用小步 migration。
+
+若產品同時包含付費入場、隨機結果與可兌現獎品，不要直接當一般付費遊戲上線，正式營運前需另做法規確認。
+
 ### 第一階段安全基線（已完成）
 
 2026-07-10 已完成：
