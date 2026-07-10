@@ -64,6 +64,88 @@ Looty MVP 要先把這條主路徑做穩：
 現在不要主動切正式網域、重做 Admin、恢復會員中心 UI、做完整錢包功能或把 Flash 兄弟模組接進來。
 也不要在 Looty repo 任務中直接修改遊戲本體 repo。
 
+## 技術與營運策略結論
+
+2026-07-10 已完成一次 Looty repo、Supabase、Cloudflare Pages 與正式營運基線調查。除非外部服務、法規或產品目標明顯改變，後續 AI 不需要重新做同一輪泛用調查，應直接以本節作為產品與營運方向。
+
+Looty 的目標不是讓一個人維護完整金融 / 博弈平台，而是成為：
+
+- 一個人可以簡單維運的遊戲入口與接入平台。
+- 現在不一定收錢，但架構保留接正式錢包或外部結算商的能力。
+- 對外合作時有清楚、可驗證的遊戲接入契約。
+- Looty 自己的遊戲可以透過 adapter 接到其他遊戲商或外部平台。
+- 投資、授權或收購時，系統可以靠文件、migration、測試與操作流程交接，不依賴原作者口頭說明。
+
+專業基線不是功能數量，而是：
+
+- 權限與責任邊界清楚。
+- 部署可以重現與回復。
+- 重要操作可以追查。
+- 資料有備份與還原流程。
+- 遊戲不直接碰玩家資料或平台 DB。
+- 外部錢包或平台可以透過 adapter 更換。
+- 已知限制誠實記錄，不把平台骨架宣稱成正式金流。
+
+建議長期維持的錢包接入方向：
+
+```text
+Game
+  -> Looty Gateway v1
+    -> Wallet Adapter
+      -> Demo Wallet
+      -> Looty non-cash points
+      -> External platform wallet
+```
+
+Looty 核心只固定玩家 / Guest、遊戲目錄、launch session、round、idempotency、統一錢包語意與查帳資訊。儲值、提款、KYC、正式 ledger、settlement 與第三方平台差異放在外部系統或 adapter，不要先由 Looty 自己承擔。
+
+### 目前第一優先階段
+
+目前最重要的是完成第一階段安全基線，順序如下：
+
+1. 定案 Gateway v1 授權方式。
+   - 不讓遊戲取得 Looty 的 Supabase JWT、anon key 或 service role key。
+   - 避免把可長期使用的 wallet credential 直接放在 URL。
+   - 優先考慮一次性 launch code 交換短效、限 game / session / action 的 Gateway token。
+2. 修正 round 所屬。
+   - 每一局必須綁定自己的 `game_session_id`。
+   - 防止不同玩家或 session 使用相同 `round_id` 時互相影響。
+3. 稽核 DB 與 Admin 權限。
+   - 確認 `games`、`admin_users`、公開 view、RPC grant 與 RLS policy。
+   - 前端 `admin_users` 檢查不能當作唯一安全線。
+4. 補 Gateway 防濫用能力。
+   - rate limit、輸入大小限制、token 過期、Guest / session 清理與必要的失敗紀錄。
+5. 建立安全測試。
+   - 跨玩家 round、重複交易、無效 / 過期 token、越權 Admin、大量 session 與 wallet 請求。
+
+Gateway v1 授權設計確認前，不要直接改 DB。先確認契約，再產生小步、可審查的 migration 與程式修改。
+
+完成第一階段後，再依需求進行：
+
+- 一人維運：Cloudflare 部署失敗通知、Supabase advisor、備份 / 還原演練、事故處理文件、依賴漏洞管理。
+- 對外接入：版本化 API、OpenAPI、最小 JS SDK、範例遊戲、Sandbox、接入檢查與 contract tests。
+- 商業交接：架構圖、服務成本、帳號與資產所有權、第三方授權、備份證明、測試結果與已知限制。
+- 正式金流：只有在出現明確合作方、收入需求與維運責任後，才評估外部 wallet / ledger / settlement 服務；不要現在自行補完整金融系統。
+
+### 已查證參考
+
+這次結論已對照以下官方資料：
+
+- Supabase Production Checklist：RLS、索引、rate limit、負載測試與正式上線檢查。
+  - https://supabase.com/docs/guides/deployment/going-into-prod
+- Supabase Database Backups：付費方案每日備份、PITR 與免費方案自行匯出方向。
+  - https://supabase.com/docs/guides/platform/backups
+- Cloudflare Pages Git integration：Git 自動部署與 preview deployment。
+  - https://developers.cloudflare.com/pages/configuration/git-integration/
+- Cloudflare Notifications：Pages 部署成功 / 失敗通知。
+  - https://developers.cloudflare.com/notifications/notification-available/
+- OWASP API Security Top 10：物件授權、Authentication、功能權限與資源濫用風險。
+  - https://owasp.org/API-Security/editions/2023/en/0x11-t10/
+- NIST Secure Software Development Framework：安全開發、元件來源、漏洞回應與採購 / 收購溝通基線。
+  - https://csrc.nist.gov/projects/ssdf
+- GitHub Dependabot：依賴漏洞告警與修補方向。
+  - https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts
+
 ## 目前前台策略
 
 - Looty 是 H5 遊戲平台 / Lobby，不是單一遊戲官網。
