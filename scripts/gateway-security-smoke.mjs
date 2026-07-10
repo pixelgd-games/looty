@@ -61,6 +61,7 @@ const balance = await post("balance", {
   gateway_token: exchangeA.gateway_token,
 })
 assert.equal(balance.status, 200, "valid gateway token must read balance")
+assert.equal(Number(balance.body?.balance), 10000, "new demo wallet must start with 10,000 POINT")
 
 const sharedRoundId = `smoke-shared-${runId}`
 const payoutKeyA = `smoke-payout-a-${runId}`

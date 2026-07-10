@@ -348,6 +348,8 @@ Game
 - admin role
 - 真實身份資料
 
+新建立的 Demo POINT 錢包目前由 Looty Platform 發放 10,000 POINT，並留下 `deposit` 流水。這是平台測試點數，不由遊戲發放，也不能提款或兌現。
+
 ## Game session / round
 
 `game_sessions` 是平台發給遊戲的啟動授權。
@@ -721,6 +723,7 @@ Looty Platform
 - `20260710141000_create_gateway_v1_session_auth.sql`
 - `20260710142000_bind_rounds_to_game_sessions.sql`
 - `20260710143000_add_gateway_runtime_limits.sql`
+- `20260710210000_grant_demo_wallet_initial_credit.sql`
 
 已部署 Edge Function：
 

@@ -281,6 +281,7 @@ ORDER BY sort_order, created_at DESC;
 - `20260710141000_create_gateway_v1_session_auth.sql`
 - `20260710142000_bind_rounds_to_game_sessions.sql`
 - `20260710143000_add_gateway_runtime_limits.sql`
+- `20260710210000_grant_demo_wallet_initial_credit.sql`
 
 目前 public schema 包含：
 
@@ -390,6 +391,7 @@ POST /functions/v1/looty-gateway/close-round
 - 前端 Loader 已接 `create-session`，但舊遊戲不需要立刻改程式。
 - Loader 不把 Supabase anon key、JWT、Authorization header 或 service role key 傳給 iframe。
 - `gateway_token` 目前只代表 `demo` wallet；正式金流仍需要可信任遊戲後端或外部 wallet adapter。
+- 新建立的 Demo POINT 錢包會取得 10,000 POINT，並寫入一筆 `deposit` 流水；營運前可用另一個小步 migration 關閉並清理測試資料。
 
 ## 環境變數
 

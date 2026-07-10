@@ -109,6 +109,7 @@
 - 2026-07-10 已套用第一階段安全 migrations：`20260710140000_secure_admin_game_access.sql`、`20260710141000_create_gateway_v1_session_auth.sql`、`20260710142000_bind_rounds_to_game_sessions.sql`、`20260710143000_add_gateway_runtime_limits.sql`。
 - 2026-07-10 已部署 `looty-gateway` v4，`verify_jwt=false`，改由 Gateway 自行驗證 create-session origin、launch code、gateway token、scope、session 與 rate limit。
 - 2026-07-10 已修正 Supabase client 匿名 `apikey` / Bearer token 被誤判成無效會員 session；Guest create-session 與完整 Gateway security smoke 已通過。
+- 2026-07-10 已套用 `20260710210000_grant_demo_wallet_initial_credit.sql`；新 Demo POINT 錢包取得 10,000 POINT 並留下 `deposit` 流水，正式營運前再關閉並清理測試資料。
 - 2026-07-10 已驗證 Gateway 可完成 create-session、exchange、balance、payout、bet、idempotency、跨 session round 隔離、close-round 流程。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 - 2026-07-10 Cloudflare Pages deployment `9994a81` 已 Active；production Lobby、Admin 與 `color-guess` Loader 已驗證通過，iframe 不再包含舊 `looty_launch_token`。
