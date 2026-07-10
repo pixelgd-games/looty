@@ -55,7 +55,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
 - 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
-- Supabase Edge Function `looty-gateway` v3 已部署，支援一次性 launch code、`exchange` 與第一版 wallet endpoints。
+- Supabase Edge Function `looty-gateway` v4 已部署，支援一次性 launch code、`exchange` 與第一版 wallet endpoints。
 - Loader 只把兩分鐘有效、只能使用一次的 `looty_launch_code` 傳給 iframe；遊戲以它交換最長一小時的 `gateway_token`。
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
 - Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
@@ -381,6 +381,7 @@ POST /functions/v1/looty-gateway/close-round
 現況：
 
 - Function `verify_jwt` 是 `false`，由 Gateway v1 自己驗證 create-session origin、Supabase user token、一次性 launch code、gateway token、scope、session 與 rate limit。
+- `create-session` 會把 Supabase client 自動附加的同值 `apikey` / Bearer token 視為 Guest；只有不同於 `apikey` 的 Bearer token 才當作會員 session 驗證。
 - Function 內部使用 `SUPABASE_SERVICE_ROLE_KEY` 呼叫 RPC。
 - service role key 不放進前端。
 - 已驗證不存在 slug 回 `404 game is not available`，不新增資料。

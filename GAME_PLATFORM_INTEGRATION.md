@@ -58,7 +58,7 @@ Lobby
 
 目前已套用 DB 平台骨架，並已建立 game session / wallet RPC。
 這些 RPC 只開給 `service_role`，前端與遊戲不能直接呼叫。
-Supabase Edge Function `looty-gateway` v3 已部署，負責建立 session、交換短效 token、rate limit 與轉接 wallet 操作。
+Supabase Edge Function `looty-gateway` v4 已部署，負責建立 session、交換短效 token、rate limit 與轉接 wallet 操作。
 
 所以現階段遊戲接 Looty，先做到：
 
@@ -405,6 +405,7 @@ POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-
 
 - Supabase Function `verify_jwt` 為 `false`。
 - `create-session` 只接受 Looty production / localhost origin，並可驗證傳入的 Supabase user token；沒有 user token 時建立 Guest。
+- Supabase client 自動附加的同值 `apikey` / Bearer token 視為 Guest；只有不同於 `apikey` 的 Bearer token 才當作會員 session 驗證。
 - 外部遊戲不需要 Supabase key 或 Authorization header。
 - Function 內部才使用 service role 呼叫 DB RPC。
 - service role key 不能進前端、遊戲端或公開 repo。
@@ -723,7 +724,7 @@ Looty Platform
 
 已部署 Edge Function：
 
-- `looty-gateway` v3，`verify_jwt=false`，由 Gateway 自行驗證。
+- `looty-gateway` v4，`verify_jwt=false`，由 Gateway 自行驗證。
 
 注意：
 

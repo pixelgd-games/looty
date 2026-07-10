@@ -457,6 +457,7 @@ async function closeRound(request: Request, headers: HeadersInit): Promise<Respo
 
 async function resolveAuthUser(request: Request): Promise<AuthResult> {
   const authorization = request.headers.get("authorization")?.trim() ?? ""
+  const apiKey = request.headers.get("apikey")?.trim() ?? ""
 
   if (!authorization) {
     return { ok: true, userId: null }
@@ -470,7 +471,7 @@ async function resolveAuthUser(request: Request): Promise<AuthResult> {
 
   const token = match[1].trim()
 
-  if (!token || token === ANON_KEY) {
+  if (!token || token === ANON_KEY || (apiKey && token === apiKey)) {
     return { ok: true, userId: null }
   }
 

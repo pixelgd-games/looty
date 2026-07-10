@@ -5,6 +5,7 @@ const gatewayUrl = (process.env.GATEWAY_URL || "https://lsazydefvnuqglultqii.sup
 const gameSlug = process.env.GATEWAY_GAME_SLUG || "color-guess"
 const lootyOrigin = process.env.GATEWAY_LOOTY_ORIGIN || "https://looty-git.pages.dev"
 const gameOrigin = process.env.GATEWAY_GAME_ORIGIN || "https://game-smoke.example"
+const anonKey = process.env.GATEWAY_ANON_KEY || ""
 const isProduction = gatewayUrl.includes("lsazydefvnuqglultqii.supabase.co")
 
 if (isProduction && process.env.ALLOW_PRODUCTION_GATEWAY_SMOKE !== "1") {
@@ -18,6 +19,18 @@ const blocked = await post("create-session", {
   currency: "POINT",
 }, "https://not-looty.example")
 assert.equal(blocked.status, 403, "create-session must reject an unapproved origin")
+
+if (anonKey) {
+  const anonymousClient = await post("create-session", {
+    slug: gameSlug,
+    currency: "POINT",
+    expires_in_seconds: 3600,
+  }, lootyOrigin, {
+    apikey: anonKey,
+    Authorization: `Bearer ${anonKey}`,
+  })
+  assert.equal(anonymousClient.status, 200, "Supabase anonymous client must create a guest session")
+}
 
 const sessionA = await createSession()
 const sessionB = await createSession()
@@ -141,12 +154,13 @@ async function wallet(route, gatewayToken, roundId, amount, idempotencyKey) {
   return expectSuccess(response, route)
 }
 
-async function post(route, body, origin = gameOrigin) {
+async function post(route, body, origin = gameOrigin, extraHeaders = {}) {
   const response = await fetch(`${gatewayUrl}/${route}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Origin: origin,
+      ...extraHeaders,
     },
     body: JSON.stringify(body),
   })

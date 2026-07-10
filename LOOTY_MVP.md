@@ -40,7 +40,8 @@ Looty MVP 要先把這條主路徑做穩：
 - `npm run build` 可成功輸出多頁靜態站。
 - 2026-07-10 已套用平台骨架 migration，新增玩家帳號、平台錢包、交易流水、game session、game round 的 DB 地基。
 - 2026-07-10 已套用第一版 game session / wallet RPC，目前只開給 `service_role`。
-- 2026-07-10 已部署 Supabase Edge Function `looty-gateway` v3，支援 `create-session`、一次性 launch code `exchange` 與第一版 wallet endpoints。
+- 2026-07-10 已部署 Supabase Edge Function `looty-gateway` v4，支援 `create-session`、一次性 launch code `exchange` 與第一版 wallet endpoints。
+- 2026-07-10 已修正匿名 Supabase client 被誤判成無效會員 session 的問題，正式網站 Guest `create-session` 已驗證通過。
 - 2026-07-10 Game Loader 已改傳兩分鐘有效、只能用一次的 launch code；遊戲可交換最長一小時的 `gateway_token`，Supabase anon key / JWT 不進 iframe。
 - 2026-07-10 已套用第一階段安全 migrations，收緊 Admin / table 權限、綁定 round / transaction session、加入 scope、rate limit 與過期清理。
 - Gateway v1 wallet mode 目前明確是 `demo`；正式金流仍需要可信任遊戲後端或外部 wallet adapter。

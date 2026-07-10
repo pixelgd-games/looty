@@ -93,7 +93,7 @@
 - 會員、Guest、錢包初始化放在 DB RPC 或後端流程，不要讓前端直接寫玩家或錢包表。
 - 目前 5 張平台骨架表與 `gateway_rate_limits` 已開 RLS，沒有前端讀寫 policy，anon / authenticated table grants 已撤銷。
 - Game session / wallet RPC 已建立，目前只開給 `service_role`，不要從前端直接呼叫。
-- Supabase Edge Function `looty-gateway` v3 已部署，支援 `create-session`、一次性 launch code `exchange` 與第一版 wallet endpoints。
+- Supabase Edge Function `looty-gateway` v4 已部署，支援 `create-session`、一次性 launch code `exchange` 與第一版 wallet endpoints。
 - Game Loader 進遊戲前會建立 session，並把 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url` 傳給 iframe。
 - 遊戲以兩分鐘有效、只能使用一次的 launch code 交換最長一小時的 `gateway_token`；Loader 不把 Supabase anon key、JWT 或 service role key 傳給 iframe。
 - Gateway v1 已自行驗證 route、token、scope、session 與 DB-backed rate limit；目前 wallet mode 是 `demo`，不代表正式金流。
@@ -107,7 +107,8 @@
 - 2026-07-10 已套用 RPC migration：`20260710010000_create_game_session_wallet_rpc.sql` 與 `20260710011000_restrict_game_session_wallet_rpc_grants.sql`。
 - 2026-07-10 已套用 RPC 修正 migration：`20260710013000_fix_wallet_rpc_variable_conflicts.sql`。
 - 2026-07-10 已套用第一階段安全 migrations：`20260710140000_secure_admin_game_access.sql`、`20260710141000_create_gateway_v1_session_auth.sql`、`20260710142000_bind_rounds_to_game_sessions.sql`、`20260710143000_add_gateway_runtime_limits.sql`。
-- 2026-07-10 已部署 `looty-gateway` v3，`verify_jwt=false`，改由 Gateway 自行驗證 create-session origin、launch code、gateway token、scope、session 與 rate limit。
+- 2026-07-10 已部署 `looty-gateway` v4，`verify_jwt=false`，改由 Gateway 自行驗證 create-session origin、launch code、gateway token、scope、session 與 rate limit。
+- 2026-07-10 已修正 Supabase client 匿名 `apikey` / Bearer token 被誤判成無效會員 session；Guest create-session 與完整 Gateway security smoke 已通過。
 - 2026-07-10 已驗證 Gateway 可完成 create-session、exchange、balance、payout、bet、idempotency、跨 session round 隔離、close-round 流程。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 - 2026-07-10 Cloudflare Pages deployment `9994a81` 已 Active；production Lobby、Admin 與 `color-guess` Loader 已驗證通過，iframe 不再包含舊 `looty_launch_token`。
