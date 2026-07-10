@@ -525,6 +525,15 @@ Smoke 目標：
 - `https://looty-git.pages.dev/game/?slug=color-guess` 可載入 Game Loader，iframe 指向 `https://color-guess-68b.pages.dev/`。
 - `/admin/*` 目前沒有 Cloudflare Access 攔截；Admin 保護由 Looty 自己的 Supabase session + `admin_users` 白名單負責。
 
+2026-07-10 Gateway v1 production smoke：
+
+- Cloudflare Pages deployment `9994a81` 已 Active。
+- Lobby 可讀到 3 款公開遊戲。
+- Admin 已通過 `is_looty_admin()` 並讀到 3 筆遊戲資料。
+- `color-guess` Loader 可建立新 session 並載入 iframe。
+- Iframe URL 有 `looty_launch_code`、`looty_exchange_url`、`looty_wallet_mode=demo`，沒有舊 `looty_launch_token`。
+- Gateway security smoke 已驗證 body limit、rate limit、一次性 code、token、idempotency 與跨 session round 隔離。
+
 Cloudflare 操作提醒：
 
 - 這台 Chrome 可能有多個 Cloudflare 帳號；操作 Looty 前先確認左上角帳號是 `pixelgd.games@gmail.com`。

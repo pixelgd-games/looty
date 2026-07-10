@@ -110,3 +110,4 @@
 - 2026-07-10 已部署 `looty-gateway` v3，`verify_jwt=false`，改由 Gateway 自行驗證 create-session origin、launch code、gateway token、scope、session 與 rate limit。
 - 2026-07-10 已驗證 Gateway 可完成 create-session、exchange、balance、payout、bet、idempotency、跨 session round 隔離、close-round 流程。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
+- 2026-07-10 Cloudflare Pages deployment `9994a81` 已 Active；production Lobby、Admin 與 `color-guess` Loader 已驗證通過，iframe 不再包含舊 `looty_launch_token`。
