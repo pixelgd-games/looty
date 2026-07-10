@@ -69,12 +69,8 @@ export async function requireAdmin(options = {}) {
     return null
   }
 
-  const email = session.user.email || ""
   const { data, error } = await supabase
-    .from("admin_users")
-    .select("id,email")
-    .eq("email", email)
-    .maybeSingle()
+    .rpc("is_looty_admin")
 
   if (error) {
     showErrorModal({
@@ -86,7 +82,7 @@ export async function requireAdmin(options = {}) {
     return null
   }
 
-  if (!data) {
+  if (data !== true) {
     if (showDeniedModal) {
       showErrorModal({
         code: ERROR_CODES.ADMIN_NOT_ALLOWED,

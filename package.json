@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "smoke": "node scripts/smoke-check.mjs"
+    "smoke": "node scripts/smoke-check.mjs",
+    "smoke:gateway": "node scripts/gateway-security-smoke.mjs"
   },
   "devDependencies": {
     "vite": "^7.3.1",

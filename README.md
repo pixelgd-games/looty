@@ -55,8 +55,10 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
 - 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
-- Supabase Edge Function `looty-gateway` 已部署，支援 `create-session` 與第一版 wallet endpoints。
-- Wallet endpoints 已可由 Gateway 轉接 RPC，但遊戲前端如何帶授權 header 尚未定案。
+- Supabase Edge Function `looty-gateway` v3 已部署，支援一次性 launch code、`exchange` 與第一版 wallet endpoints。
+- Loader 只把兩分鐘有效、只能使用一次的 `looty_launch_code` 傳給 iframe；遊戲以它交換最長一小時的 `gateway_token`。
+- Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
+- Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
 ## 目前工作方向
@@ -140,17 +142,19 @@ Lobby 讀取欄位：
 2. 查 `public_games_v1`。
 3. 取出 `launch_url`。
 4. 用 `src/lib/urls.js` 檢查 URL。
-5. 呼叫 `looty-gateway/create-session` 建立平台 session。
-6. 將 Looty session 參數加到 iframe URL。
+5. 呼叫 `looty-gateway/create-session` 建立平台 session 與一次性 launch code。
+6. 將非敏感 session 資訊與一次性 launch code 加到 iframe URL。
 7. 以 iframe 載入遊戲。
 
 Loader 會附加給遊戲的 query params：
 
 - `looty_session_id`
-- `looty_launch_token`
+- `looty_launch_code`
 - `looty_game_id`
 - `looty_currency`
+- `looty_wallet_mode`
 - `looty_gateway_url`
+- `looty_exchange_url`
 
 舊遊戲若不讀這些參數，仍可照常顯示。
 
@@ -273,6 +277,10 @@ ORDER BY sort_order, created_at DESC;
 - `20260710010000_create_game_session_wallet_rpc.sql`
 - `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
 - `20260710013000_fix_wallet_rpc_variable_conflicts.sql`
+- `20260710140000_secure_admin_game_access.sql`
+- `20260710141000_create_gateway_v1_session_auth.sql`
+- `20260710142000_bind_rounds_to_game_sessions.sql`
+- `20260710143000_add_gateway_runtime_limits.sql`
 
 目前 public schema 包含：
 
@@ -284,32 +292,34 @@ ORDER BY sort_order, created_at DESC;
 - `wallet_transactions`
 - `game_sessions`
 - `game_rounds`
+- `gateway_rate_limits`
 
 5 張平台骨架表：
 
 - `player_accounts`: 玩家身份，Guest 和正式帳號都用這張。
 - `wallet_accounts`: 玩家平台錢包，目前是一個玩家一種幣別一個 active wallet。
-- `wallet_transactions`: 錢包流水，包含 `balance_before`、`balance_after`、`idempotency_key`。
-- `game_sessions`: 玩家進遊戲時的平台 session，只存 `launch_token_hash`，不存明文 token。
-- `game_rounds`: 遊戲局號，可對應下注、派彩、退款紀錄。
+- `wallet_transactions`: 錢包流水，包含 `game_session_id`、`balance_before`、`balance_after`、`idempotency_key`。
+- `game_sessions`: 玩家進遊戲時的平台 session，只存 launch code / gateway token hash，不存明文 credential。
+- `game_rounds`: 遊戲局號，以 `game_session_id + round_id` 隔離不同玩家與 session。
+- `gateway_rate_limits`: Gateway route / IP 時窗計數，只存 rate limit key hash。
 
 目前沒有做：
 
 - 沒有復活 `players`。
 - 沒有復活 `player_balances`。
-- 沒有改 `games`。
-- 沒有改 `admin_users`。
-- 沒有改 `public_games_v1`。
+- 沒有改 `games` 或 `admin_users` 的欄位與資料。
+- `games` / `admin_users` 的 RLS policy 與 grants 已收緊。
+- `public_games_v1` 契約不變，已改成 security invoker view 搭配固定公開欄位函式。
 - 沒有建立會員 UI。
 - 沒有讓前端直接寫錢包。
 - 沒有接 Supinova。
 
 安全現況：
 
-- 5 張平台骨架表都有開 RLS。
-- 目前沒有開前端直接讀寫 table 的 policy。
-- `create_game_session`、`wallet_get_balance`、`wallet_bet`、`wallet_payout`、`wallet_refund`、`close_game_round` 目前只 grant 給 `service_role`。
-- `looty_hash_launch_token`、`looty_active_session`、`looty_apply_wallet_transaction` 是內部 helper，目前只保留 owner execute。
+- 5 張平台骨架表與 `gateway_rate_limits` 都有開 RLS，沒有前端直接讀寫 policy，anon / authenticated table grants 已撤銷。
+- `games` 只允許通過 `is_looty_admin()` 的 authenticated 使用者管理；`admin_users` 不再直接暴露給前端。
+- `create_game_session`、`exchange_game_launch_code`、`wallet_get_balance`、`wallet_bet`、`wallet_payout`、`wallet_refund`、`close_game_round` 只 grant 給 `service_role`。
+- `looty_hash_secret`、`looty_active_session`、`looty_apply_wallet_transaction` 是內部 helper，只保留 owner execute。
 - 未來玩家、Guest、錢包初始化應走後端或 Gateway，不要讓前端直接寫 table。
 
 ## Looty Gateway
@@ -324,6 +334,7 @@ https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway
 
 ```http
 POST /functions/v1/looty-gateway/create-session
+POST /functions/v1/looty-gateway/exchange
 POST /functions/v1/looty-gateway/balance
 POST /functions/v1/looty-gateway/bet
 POST /functions/v1/looty-gateway/payout
@@ -348,23 +359,36 @@ POST /functions/v1/looty-gateway/close-round
   "session_id": "...",
   "game_id": "...",
   "player_account_ref": "...",
-  "launch_token": "...",
+  "launch_code": "...",
+  "launch_code_expires_at": "...",
   "account_type": "guest",
   "currency": "POINT",
+  "wallet_mode": "demo",
   "expires_at": "..."
 }
 ```
 
+遊戲以一次性 launch code 呼叫 `exchange`：
+
+```json
+{
+  "launch_code": "..."
+}
+```
+
+`exchange` 回傳最長一小時、只放在執行中記憶體的 `gateway_token`。Wallet endpoints 的 body 使用 `gateway_token`，不再使用舊 `launch_token`。
+
 現況：
 
-- Function `verify_jwt` 是 `true`，沒有授權 header 會被 Supabase 擋下。
+- Function `verify_jwt` 是 `false`，由 Gateway v1 自己驗證 create-session origin、Supabase user token、一次性 launch code、gateway token、scope、session 與 rate limit。
 - Function 內部使用 `SUPABASE_SERVICE_ROLE_KEY` 呼叫 RPC。
 - service role key 不放進前端。
-- 已驗證未授權呼叫回 `401`。
 - 已驗證不存在 slug 回 `404 game is not available`，不新增資料。
-- 已驗證 Gateway 可完成 create-session、balance、payout、bet、idempotency、close-round 流程。
+- 已驗證未允許 origin 回 `403`、launch code 只能用一次、無效 token 回 `404`。
+- 已驗證 Gateway 可完成 create-session、exchange、balance、payout、bet、idempotency、round session 隔離、close-round 流程。
 - 前端 Loader 已接 `create-session`，但舊遊戲不需要立刻改程式。
-- Loader 目前沒有把 Supabase anon key 或 JWT 傳給 iframe，因此遊戲前端不能只靠 `looty_launch_token` 直接呼叫 wallet endpoints。
+- Loader 不把 Supabase anon key、JWT、Authorization header 或 service role key 傳給 iframe。
+- `gateway_token` 目前只代表 `demo` wallet；正式金流仍需要可信任遊戲後端或外部 wallet adapter。
 
 ## 環境變數
 
@@ -448,6 +472,15 @@ npm run build
 npm run smoke
 ```
 
+Gateway v1 正式環境安全 smoke：
+
+```powershell
+$env:ALLOW_PRODUCTION_GATEWAY_SMOKE='1'
+npm.cmd run smoke:gateway
+```
+
+安全 smoke 會建立標記為 `gateway-security-smoke` 的 demo session / round / transaction 測試資料，不要在未確認 Looty 專案時執行。
+
 Smoke 目標：
 
 - 先跑 `npm run build`。
@@ -459,7 +492,7 @@ Smoke 目標：
 
 - `npm run build` 通過。
 - `npm run smoke` 通過。
-- Gateway wallet smoke 通過。
+- Gateway v1 security smoke 通過。
 
 若要指定 browser，用 `SMOKE_BROWSER_PATH`。
 

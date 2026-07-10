@@ -5,9 +5,25 @@ type CreateSessionRow = {
   player_account_id: string
   wallet_account_id: string
   game_id: string
-  launch_token: string
+  launch_code: string
+  launch_code_expires_at: string
   account_type: string
   currency: string
+  wallet_mode: string
+  expires_at: string
+}
+
+type ExchangeSessionRow = {
+  session_id: string
+  player_account_id: string
+  wallet_account_id: string
+  game_id: string
+  gateway_token: string
+  gateway_token_expires_at: string
+  gateway_token_scopes: string[]
+  account_type: string
+  currency: string
+  wallet_mode: string
   expires_at: string
 }
 
@@ -45,8 +61,28 @@ type CloseRoundRow = {
   settled_at: string
 }
 
+type RpcResult = {
+  ok: boolean
+  body: unknown
+}
+
+type BodyResult =
+  | { ok: true; value: Record<string, unknown> }
+  | { ok: false; error: string }
+
+type AuthResult =
+  | { ok: true; userId: string | null }
+  | { ok: false; error: string }
+
+type RateLimitConfig = {
+  limit: number
+  windowSeconds: number
+}
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+const MAX_BODY_BYTES = 16 * 1024
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://looty-git.pages.dev",
   "http://localhost:5173",
@@ -54,6 +90,24 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:4173",
   "http://127.0.0.1:4173",
 ]
+const ROUTES = new Set([
+  "create-session",
+  "exchange",
+  "balance",
+  "bet",
+  "payout",
+  "refund",
+  "close-round",
+])
+const RATE_LIMITS: Record<string, RateLimitConfig> = {
+  "create-session": { limit: 30, windowSeconds: 300 },
+  exchange: { limit: 60, windowSeconds: 300 },
+  balance: { limit: 120, windowSeconds: 60 },
+  bet: { limit: 120, windowSeconds: 60 },
+  payout: { limit: 120, windowSeconds: 60 },
+  refund: { limit: 120, windowSeconds: 60 },
+  "close-round": { limit: 120, windowSeconds: 60 },
+}
 
 const allowedOrigins = (Deno.env.get("LOOTY_ALLOWED_ORIGINS") ?? "")
   .split(",")
@@ -65,51 +119,92 @@ if (allowedOrigins.length === 0) {
 }
 
 Deno.serve(async (request) => {
+  const requestId = crypto.randomUUID()
+  const startedAt = Date.now()
   const origin = request.headers.get("origin")
-  const corsHeaders = buildCorsHeaders(origin)
-
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: isOriginAllowed(origin) ? 204 : 403,
-      headers: corsHeaders,
-    })
-  }
-
-  if (!isOriginAllowed(origin)) {
-    return jsonResponse({ error: "Origin is not allowed" }, 403, corsHeaders)
-  }
-
-  if (request.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405, {
-      ...corsHeaders,
-      Allow: "POST, OPTIONS",
-    })
-  }
-
   const route = getRoute(request.url)
+  const corsHeaders = buildCorsHeaders(origin, route, requestId)
+  let response: Response
 
+  try {
+    if (request.method === "OPTIONS") {
+      response = new Response(null, {
+        status: isCorsOriginAllowed(origin, route) ? 204 : 403,
+        headers: corsHeaders,
+      })
+    } else if (!isCorsOriginAllowed(origin, route)) {
+      response = jsonResponse({ error: "Origin is not allowed" }, 403, corsHeaders)
+    } else if (request.method !== "POST") {
+      response = jsonResponse({ error: "Method not allowed" }, 405, {
+        ...corsHeaders,
+        Allow: "POST, OPTIONS",
+      })
+    } else if (!ROUTES.has(route)) {
+      response = jsonResponse({ error: "Route not found" }, 404, corsHeaders)
+    } else {
+      const rateLimitResponse = await enforceRateLimit(route, request, corsHeaders)
+      response = rateLimitResponse ?? await dispatchRoute(route, request, corsHeaders)
+    }
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "gateway_error",
+      request_id: requestId,
+      route,
+      message: error instanceof Error ? error.message : "Unknown gateway error",
+    }))
+    response = jsonResponse({ error: "Gateway request failed" }, 500, corsHeaders)
+  }
+
+  console.log(JSON.stringify({
+    event: "gateway_request",
+    request_id: requestId,
+    route,
+    method: request.method,
+    status: response.status,
+    duration_ms: Date.now() - startedAt,
+    origin: origin || null,
+  }))
+
+  return response
+})
+
+async function dispatchRoute(
+  route: string,
+  request: Request,
+  headers: HeadersInit,
+): Promise<Response> {
   if (route === "create-session") {
-    return createSession(request, corsHeaders)
+    return createSession(request, headers)
+  }
+
+  if (route === "exchange") {
+    return exchangeLaunchCode(request, headers)
   }
 
   if (route === "balance") {
-    return getBalance(request, corsHeaders)
+    return getBalance(request, headers)
   }
 
   if (route === "bet" || route === "payout" || route === "refund") {
-    return applyWalletTransaction(route, request, corsHeaders)
+    return applyWalletTransaction(route, request, headers)
   }
 
   if (route === "close-round") {
-    return closeRound(request, corsHeaders)
+    return closeRound(request, headers)
   }
 
-  return jsonResponse({ error: "Route not found" }, 404, corsHeaders)
-})
+  return jsonResponse({ error: "Route not found" }, 404, headers)
+}
 
 async function createSession(request: Request, headers: HeadersInit): Promise<Response> {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return jsonResponse({ error: "Gateway is not configured" }, 500, headers)
+  }
+
+  const auth = await resolveAuthUser(request)
+
+  if (!auth.ok) {
+    return jsonResponse({ error: auth.error }, 401, headers)
   }
 
   const body = await readJsonBody(request)
@@ -135,40 +230,77 @@ async function createSession(request: Request, headers: HeadersInit): Promise<Re
     return jsonResponse({ error: "Invalid session expiry" }, 400, headers)
   }
 
-  const rpcResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/create_game_session`, {
-    method: "POST",
-    headers: {
-      apikey: SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      p_game_slug: slug,
-      p_currency: currency,
-      p_expires_in_seconds: expiresInSeconds,
-      p_display_name: displayName || null,
-    }),
+  const rpcResult = await callRpc("create_game_session", {
+    p_game_slug: slug,
+    p_currency: currency,
+    p_expires_in_seconds: expiresInSeconds,
+    p_display_name: displayName || null,
+    p_auth_user_id: auth.userId,
   })
 
-  const rpcBody = await readResponseJson(rpcResponse)
-
-  if (!rpcResponse.ok) {
-    return jsonResponse(toPublicRpcError(rpcBody), statusFromRpcError(rpcBody), headers)
+  if (!rpcResult.ok) {
+    return jsonResponse(toPublicRpcError(rpcResult.body), statusFromRpcError(rpcResult.body), headers)
   }
 
-  const row = Array.isArray(rpcBody) ? rpcBody[0] as CreateSessionRow | undefined : undefined
+  const row = firstRpcRow<CreateSessionRow>(rpcResult.body)
 
-  if (!row?.session_id || !row.launch_token) {
+  if (!row?.session_id || !row.launch_code) {
     return jsonResponse({ error: "Gateway returned an empty session" }, 502, headers)
+  }
+
+  await callRpc("looty_cleanup_gateway_runtime", {})
+
+  return jsonResponse({
+    session_id: row.session_id,
+    game_id: row.game_id,
+    player_account_ref: row.player_account_id,
+    launch_code: row.launch_code,
+    launch_code_expires_at: row.launch_code_expires_at,
+    account_type: row.account_type,
+    currency: row.currency,
+    wallet_mode: row.wallet_mode,
+    expires_at: row.expires_at,
+  }, 200, headers)
+}
+
+async function exchangeLaunchCode(request: Request, headers: HeadersInit): Promise<Response> {
+  const body = await readJsonBody(request)
+
+  if (!body.ok) {
+    return jsonResponse({ error: body.error }, 400, headers)
+  }
+
+  const launchCode = normalizeRequiredText(body.value.launch_code, 128)
+
+  if (!launchCode) {
+    return jsonResponse({ error: "launch_code is required" }, 400, headers)
+  }
+
+  const rpcResult = await callRpc("exchange_game_launch_code", {
+    p_launch_code: launchCode,
+    p_gateway_expires_in_seconds: 3600,
+  })
+
+  if (!rpcResult.ok) {
+    return jsonResponse(toPublicRpcError(rpcResult.body), statusFromRpcError(rpcResult.body), headers)
+  }
+
+  const row = firstRpcRow<ExchangeSessionRow>(rpcResult.body)
+
+  if (!row?.session_id || !row.gateway_token) {
+    return jsonResponse({ error: "Gateway token was not created" }, 502, headers)
   }
 
   return jsonResponse({
     session_id: row.session_id,
     game_id: row.game_id,
     player_account_ref: row.player_account_id,
-    launch_token: row.launch_token,
+    gateway_token: row.gateway_token,
+    gateway_token_expires_at: row.gateway_token_expires_at,
+    scopes: row.gateway_token_scopes,
     account_type: row.account_type,
     currency: row.currency,
+    wallet_mode: row.wallet_mode,
     expires_at: row.expires_at,
   }, 200, headers)
 }
@@ -180,14 +312,14 @@ async function getBalance(request: Request, headers: HeadersInit): Promise<Respo
     return jsonResponse({ error: body.error }, 400, headers)
   }
 
-  const launchToken = normalizeRequiredText(body.value.launch_token, 256)
+  const gatewayToken = normalizeRequiredText(body.value.gateway_token, 256)
 
-  if (!launchToken) {
-    return jsonResponse({ error: "launch_token is required" }, 400, headers)
+  if (!gatewayToken) {
+    return jsonResponse({ error: "gateway_token is required" }, 400, headers)
   }
 
   const rpcResult = await callRpc("wallet_get_balance", {
-    p_launch_token: launchToken,
+    p_gateway_token: gatewayToken,
   })
 
   if (!rpcResult.ok) {
@@ -220,14 +352,14 @@ async function applyWalletTransaction(
     return jsonResponse({ error: body.error }, 400, headers)
   }
 
-  const launchToken = normalizeRequiredText(body.value.launch_token, 256)
+  const gatewayToken = normalizeRequiredText(body.value.gateway_token, 256)
   const roundId = normalizeRequiredText(body.value.round_id, 120)
   const idempotencyKey = normalizeRequiredText(body.value.idempotency_key, 180)
   const amount = normalizeAmount(body.value.amount)
   const metadata = normalizeMetadata(body.value.metadata)
 
-  if (!launchToken) {
-    return jsonResponse({ error: "launch_token is required" }, 400, headers)
+  if (!gatewayToken) {
+    return jsonResponse({ error: "gateway_token is required" }, 400, headers)
   }
 
   if (!roundId) {
@@ -247,7 +379,7 @@ async function applyWalletTransaction(
   }
 
   const rpcResult = await callRpc(`wallet_${transactionType}`, {
-    p_launch_token: launchToken,
+    p_gateway_token: gatewayToken,
     p_round_id: roundId,
     p_amount: amount,
     p_idempotency_key: idempotencyKey,
@@ -284,11 +416,11 @@ async function closeRound(request: Request, headers: HeadersInit): Promise<Respo
     return jsonResponse({ error: body.error }, 400, headers)
   }
 
-  const launchToken = normalizeRequiredText(body.value.launch_token, 256)
+  const gatewayToken = normalizeRequiredText(body.value.gateway_token, 256)
   const roundId = normalizeRequiredText(body.value.round_id, 120)
 
-  if (!launchToken) {
-    return jsonResponse({ error: "launch_token is required" }, 400, headers)
+  if (!gatewayToken) {
+    return jsonResponse({ error: "gateway_token is required" }, 400, headers)
   }
 
   if (!roundId) {
@@ -296,7 +428,7 @@ async function closeRound(request: Request, headers: HeadersInit): Promise<Respo
   }
 
   const rpcResult = await callRpc("close_game_round", {
-    p_launch_token: launchToken,
+    p_gateway_token: gatewayToken,
     p_round_id: roundId,
   })
 
@@ -323,10 +455,85 @@ async function closeRound(request: Request, headers: HeadersInit): Promise<Respo
   }, 200, headers)
 }
 
-async function callRpc(name: string, args: Record<string, unknown>): Promise<{
-  ok: boolean
-  body: unknown
-}> {
+async function resolveAuthUser(request: Request): Promise<AuthResult> {
+  const authorization = request.headers.get("authorization")?.trim() ?? ""
+
+  if (!authorization) {
+    return { ok: true, userId: null }
+  }
+
+  const match = authorization.match(/^Bearer\s+(.+)$/i)
+
+  if (!match) {
+    return { ok: false, error: "Invalid authorization header" }
+  }
+
+  const token = match[1].trim()
+
+  if (!token || token === ANON_KEY) {
+    return { ok: true, userId: null }
+  }
+
+  if (!SUPABASE_URL || !ANON_KEY) {
+    return { ok: false, error: "Gateway authentication is not configured" }
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: ANON_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    return { ok: false, error: "User session is not valid" }
+  }
+
+  const user = await readResponseJson(response)
+  const userId = user && typeof user === "object" && "id" in user && typeof user.id === "string"
+    ? user.id
+    : ""
+
+  if (!userId) {
+    return { ok: false, error: "User session is not valid" }
+  }
+
+  return { ok: true, userId }
+}
+
+async function enforceRateLimit(
+  route: string,
+  request: Request,
+  headers: HeadersInit,
+): Promise<Response | null> {
+  const config = RATE_LIMITS[route]
+
+  if (!config) {
+    return null
+  }
+
+  const clientAddress = getClientAddress(request)
+  const rpcResult = await callRpc("looty_consume_gateway_rate_limit", {
+    p_key: `${route}:${clientAddress}`,
+    p_limit: config.limit,
+    p_window_seconds: config.windowSeconds,
+  })
+
+  if (!rpcResult.ok) {
+    return jsonResponse({ error: "Gateway rate limit is unavailable" }, 503, headers)
+  }
+
+  if (rpcResult.body !== true) {
+    return jsonResponse({ error: "Too many requests" }, 429, {
+      ...headers,
+      "Retry-After": String(config.windowSeconds),
+    })
+  }
+
+  return null
+}
+
+async function callRpc(name: string, args: Record<string, unknown>): Promise<RpcResult> {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return {
       ok: false,
@@ -362,31 +569,51 @@ function getRoute(url: string): string {
   return last
 }
 
-function buildCorsHeaders(origin: string | null): Record<string, string> {
+function buildCorsHeaders(
+  origin: string | null,
+  route: string,
+  requestId: string,
+): Record<string, string> {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Content-Type": "application/json; charset=utf-8",
+    "X-Looty-Request-Id": requestId,
     Vary: "Origin",
   }
 
-  if (isOriginAllowed(origin) && origin) {
+  if (isCorsOriginAllowed(origin, route) && origin) {
     headers["Access-Control-Allow-Origin"] = origin
   }
 
   return headers
 }
 
-function isOriginAllowed(origin: string | null): boolean {
+function isCorsOriginAllowed(origin: string | null, route: string): boolean {
   if (!origin) {
     return true
   }
 
-  if (allowedOrigins.includes(origin)) {
-    return true
+  if (route === "create-session") {
+    return allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)
   }
 
-  return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)
+  try {
+    const url = new URL(origin)
+    return url.protocol === "https:"
+      || (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname))
+  } catch {
+    return false
+  }
+}
+
+function getClientAddress(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+
+  return request.headers.get("cf-connecting-ip")?.trim()
+    || request.headers.get("x-real-ip")?.trim()
+    || forwardedFor
+    || "unknown"
 }
 
 function jsonResponse(payload: JsonValue, status: number, headers: HeadersInit): Response {
@@ -396,12 +623,15 @@ function jsonResponse(payload: JsonValue, status: number, headers: HeadersInit):
   })
 }
 
-async function readJsonBody(request: Request): Promise<
-  | { ok: true; value: Record<string, unknown> }
-  | { ok: false; error: string }
-> {
+async function readJsonBody(request: Request): Promise<BodyResult> {
   try {
-    const value = await request.json()
+    const text = await request.text()
+
+    if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+      return { ok: false, error: "JSON body is too large" }
+    }
+
+    const value = JSON.parse(text)
 
     if (!value || typeof value !== "object" || Array.isArray(value)) {
       return { ok: false, error: "JSON body must be an object" }
@@ -500,11 +730,7 @@ function statusFromRpcError(error: unknown): number {
     return 404
   }
 
-  if (code === "P0001") {
-    return 409
-  }
-
-  if (code === "23505") {
+  if (code === "P0001" || code === "23505") {
     return 409
   }
 

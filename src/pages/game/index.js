@@ -98,12 +98,15 @@ async function main() {
   }
 
   const launchSession = await createLaunchSession(data.slug)
+  const gatewayUrl = supabaseFunctionsUrl ? `${supabaseFunctionsUrl}/looty-gateway` : ""
   const sessionGameUrl = appendQueryParams(gameUrl, {
     looty_session_id: launchSession.session_id,
-    looty_launch_token: launchSession.launch_token,
+    looty_launch_code: launchSession.launch_code,
     looty_game_id: launchSession.game_id,
     looty_currency: launchSession.currency,
-    looty_gateway_url: supabaseFunctionsUrl ? `${supabaseFunctionsUrl}/looty-gateway` : "",
+    looty_wallet_mode: launchSession.wallet_mode,
+    looty_gateway_url: gatewayUrl,
+    looty_exchange_url: gatewayUrl ? `${gatewayUrl}/exchange` : "",
   })
 
   if (!sessionGameUrl) {
@@ -132,7 +135,7 @@ async function createLaunchSession(gameSlug) {
     throw error
   }
 
-  if (!data?.session_id || !data?.launch_token) {
+  if (!data?.session_id || !data?.launch_code) {
     throw new Error("Looty gateway returned an empty session.")
   }
 

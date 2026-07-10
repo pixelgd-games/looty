@@ -40,9 +40,10 @@ Looty MVP 要先把這條主路徑做穩：
 - `npm run build` 可成功輸出多頁靜態站。
 - 2026-07-10 已套用平台骨架 migration，新增玩家帳號、平台錢包、交易流水、game session、game round 的 DB 地基。
 - 2026-07-10 已套用第一版 game session / wallet RPC，目前只開給 `service_role`。
-- 2026-07-10 已部署 Supabase Edge Function `looty-gateway`，支援 `create-session` 與第一版 wallet endpoints。
-- 2026-07-10 Game Loader 已接 `looty-gateway/create-session`，進遊戲前會建立 session 並把 Looty session 參數附加到 iframe URL。
-- 遊戲前端呼叫 wallet endpoints 的授權交接方式尚未定案。
+- 2026-07-10 已部署 Supabase Edge Function `looty-gateway` v3，支援 `create-session`、一次性 launch code `exchange` 與第一版 wallet endpoints。
+- 2026-07-10 Game Loader 已改傳兩分鐘有效、只能用一次的 launch code；遊戲可交換最長一小時的 `gateway_token`，Supabase anon key / JWT 不進 iframe。
+- 2026-07-10 已套用第一階段安全 migrations，收緊 Admin / table 權限、綁定 round / transaction session、加入 scope、rate limit 與過期清理。
+- Gateway v1 wallet mode 目前明確是 `demo`；正式金流仍需要可信任遊戲後端或外部 wallet adapter。
 - 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 
@@ -57,7 +58,7 @@ Looty MVP 要先把這條主路徑做穩：
 1. 用 Admin 上架 / 下架 / 編輯遊戲資料。
 2. 確認 Lobby 能看到公開遊戲。
 3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
-4. 先決定遊戲前端呼叫 wallet endpoints 的授權交接方式，再挑乾淨遊戲 repo 做正式接入。
+4. Gateway v1 授權交接已完成；若要驗證遊戲端，下一步由使用者指定一款乾淨遊戲 repo 做正式接入。
 5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
 6. 有具體問題時再針對該問題修正。
 
@@ -99,26 +100,27 @@ Game
 
 Looty 核心只固定玩家 / Guest、遊戲目錄、launch session、round、idempotency、統一錢包語意與查帳資訊。儲值、提款、KYC、正式 ledger、settlement 與第三方平台差異放在外部系統或 adapter，不要先由 Looty 自己承擔。
 
-### 目前第一優先階段
+### 第一階段安全基線（已完成）
 
-目前最重要的是完成第一階段安全基線，順序如下：
+2026-07-10 已完成：
 
-1. 定案 Gateway v1 授權方式。
+1. Gateway v1 授權已定案。
    - 不讓遊戲取得 Looty 的 Supabase JWT、anon key 或 service role key。
-   - 避免把可長期使用的 wallet credential 直接放在 URL。
-   - 優先考慮一次性 launch code 交換短效、限 game / session / action 的 Gateway token。
-2. 修正 round 所屬。
-   - 每一局必須綁定自己的 `game_session_id`。
-   - 防止不同玩家或 session 使用相同 `round_id` 時互相影響。
-3. 稽核 DB 與 Admin 權限。
-   - 確認 `games`、`admin_users`、公開 view、RPC grant 與 RLS policy。
-   - 前端 `admin_users` 檢查不能當作唯一安全線。
-4. 補 Gateway 防濫用能力。
-   - rate limit、輸入大小限制、token 過期、Guest / session 清理與必要的失敗紀錄。
-5. 建立安全測試。
-   - 跨玩家 round、重複交易、無效 / 過期 token、越權 Admin、大量 session 與 wallet 請求。
+   - URL 只放兩分鐘有效、只能使用一次的 launch code。
+   - Launch code 交換最長一小時、限 session / action scope 的 Gateway token。
+2. Round 所屬已修正。
+   - 每一局與 wallet transaction 都綁定自己的 `game_session_id`。
+   - 不同玩家或 session 可安全使用相同 `round_id`。
+3. DB 與 Admin 權限已稽核並收緊。
+   - `games`、`admin_users`、公開 view、RPC grant 與 RLS policy 已核對。
+   - Admin 改用 `is_looty_admin()`，前端不再直接讀整張白名單。
+4. Gateway 防濫用能力已補上。
+   - DB-backed rate limit、16 KiB body 限制、token / session 過期、rate bucket 清理與結構化失敗紀錄。
+   - Guest account 的長期保存期限仍未定案，第一階段不自動刪除玩家或錢包。
+5. 安全測試已建立。
+   - 已驗證 origin、一次性 launch code、無效 token、idempotency、跨 session round 與 close-round 權限。
 
-Gateway v1 授權設計確認前，不要直接改 DB。先確認契約，再產生小步、可審查的 migration 與程式修改。
+第一階段已用四個小步 migration 套用，Gateway v1 security smoke 已通過。後續若改 Gateway 契約，仍要先確認設計，再產生小步、可審查的 migration。
 
 完成第一階段後，再依需求進行：
 
@@ -159,7 +161,7 @@ Gateway v1 授權設計確認前，不要直接改 DB。先確認契約，再產
 
 - Loader 保留全畫面 Loading overlay。
 - Loader 先建立 Looty game session，再啟動 iframe。
-- Loader 會把 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url` 傳給遊戲。
+- Loader 會把 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url` 傳給遊戲。
 - iframe 一開始就滿版載入，避免 overlay 消失時畫面跳動。
 - 外層 document 保留原生 scroll，配合 sticky 遊戲容器，讓手機瀏覽器網址列有機會收合。
 - overlay 可見時接住垂直滑動手勢，隱藏後才把觸控交回 iframe。

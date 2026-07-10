@@ -16,7 +16,7 @@
 
 Looty 是平台入口與玩家平台層。
 
-遊戲只應接 Looty 給的啟動入口、session 或 launch token。遊戲不登入玩家、不保存玩家身份、不直接寫 Looty Supabase、不直接改玩家餘額。
+遊戲只應接 Looty 給的啟動入口、session、一次性 launch code 與短效 gateway token。遊戲不登入玩家、不保存玩家身份、不直接寫 Looty Supabase、不直接改玩家餘額。
 
 ## 絕對邊界：Looty AI 不改遊戲本體
 
@@ -50,13 +50,15 @@ Lobby
   -> public_games_v1
   -> /game/?slug=<slug>
   -> looty-gateway/create-session
-  -> public_games_v1.launch_url + Looty query params
+  -> public_games_v1.launch_url + one-time launch code
   -> iframe 載入遊戲
+  -> 遊戲需要 wallet 時呼叫 looty-gateway/exchange
+  -> gateway_token + wallet endpoints
 ```
 
 目前已套用 DB 平台骨架，並已建立 game session / wallet RPC。
 這些 RPC 只開給 `service_role`，前端與遊戲不能直接呼叫。
-Supabase Edge Function `looty-gateway` 已部署，負責建立 session 與轉接 wallet 操作。
+Supabase Edge Function `looty-gateway` v3 已部署，負責建立 session、交換短效 token、rate limit 與轉接 wallet 操作。
 
 所以現階段遊戲接 Looty，先做到：
 
@@ -66,8 +68,8 @@ Supabase Edge Function `looty-gateway` 已部署，負責建立 session 與轉�
 - 不要求 Looty 前台登入。
 - 不要求遊戲自己讀 Supabase Auth。
 - 不直接寫玩家或錢包資料。
-- 之後透過 Looty Gateway / 後端呼叫 RPC，不把 service role key 放進遊戲前端。
-- Loader 進遊戲前會呼叫 `looty-gateway/create-session`，再把 Looty session 參數帶給 iframe。
+- 透過 Looty Gateway 呼叫 wallet，不把 Supabase key 或 service role key 放進遊戲前端。
+- Loader 進遊戲前會呼叫 `looty-gateway/create-session`，再把一次性 launch code 與非敏感 session 參數帶給 iframe。
 
 ## 給遊戲 AI 的最短規則
 
@@ -100,7 +102,7 @@ Looty Platform 負責：
 - `player_accounts`。
 - 平台錢包。
 - `game_sessions`。
-- launch token 發放與驗證方向。
+- launch code / gateway token 發放與驗證。
 - 錢包交易語意與 idempotency。
 - Admin 遊戲上架資料。
 - 公開遊戲列表。
@@ -123,7 +125,7 @@ Game 負責：
 - 遊戲畫面與互動。
 - 遊戲玩法。
 - 產生或管理局號 / round。
-- 接收平台給的 session / launch token。
+- 接收平台給的 session / launch code / gateway token。
 - 需要接 wallet 時，透過 Looty Gateway 回報下注、派彩、退款、結算事件。
 - 顯示平台回傳的餘額與結果。
 
@@ -142,7 +144,7 @@ Game 不負責：
 
 Game Gateway 是平台與遊戲之間的轉接層，負責：
 
-- 驗證 launch token / session。
+- 驗證 launch code / gateway token / session。
 - 把遊戲的 bet / payout / refund / rollback 轉成平台可處理的格式。
 - 對接 Looty wallet API 或第三方平台 wallet API。
 - 隔離不同遊戲、不同外部平台的 API 差異。
@@ -227,6 +229,7 @@ type: deposit / withdraw / bet / payout / refund / adjustment
 amount
 balance_before
 balance_after
+game_session_id
 game_id
 round_id
 idempotency_key
@@ -262,21 +265,24 @@ Player
 
 ```text
 looty_session_id
-looty_launch_token
+looty_launch_code
 looty_game_id
 looty_currency
+looty_wallet_mode
 looty_gateway_url
+looty_exchange_url
 ```
 
 遊戲可以先只讀這些參數，不一定要立刻接錢包。舊遊戲如果忽略這些 query params，仍可照常顯示。
 
 遊戲 AI 接入時，建議先做最低限度支援：
 
-1. 從 URL 讀取 `looty_launch_token`。
-2. 從 URL 讀取 `looty_gateway_url`。
-3. 若缺少這兩個值，維持原本 demo / free-play 流程。
-4. 若存在這兩個值，可以先保存於執行中的記憶體狀態。
-5. 不要立刻啟用真實 wallet 扣款或派彩，除非使用者明確要求且授權交接方式已定案。
+1. 從 URL 讀取 `looty_launch_code` 與 `looty_exchange_url`。
+2. 若缺少這兩個值，維持原本 demo / free-play 流程。
+3. 對 `looty_exchange_url` POST `{ "launch_code": "..." }`。
+4. 將回傳的 `gateway_token` 只保存在執行中的記憶體狀態。
+5. Wallet requests 使用 `gateway_token`，不要使用 Supabase anon key、JWT 或 Authorization header。
+6. 目前 `wallet_mode` 是 `demo`，不要把它當成正式可兌現資產。
 
 啟動目標：
 
@@ -286,8 +292,8 @@ Player / Guest
     -> ensure player_account
     -> ensure wallet_account
     -> create game_session
-    -> issue launch_token
-      -> Game
+    -> issue one-time launch_code
+      -> Game exchanges gateway_token
 ```
 
 遊戲啟動後：
@@ -300,17 +306,16 @@ Game
         -> Looty wallet API / DB RPC / backend API
 ```
 
-遊戲只認 `launch_token`。
+遊戲只認一次性 `launch_code` 與交換後的短效 `gateway_token`。
 遊戲不要拿 Supabase auth token，也不要知道玩家 email、Google 帳號、後台權限或真實身份。
 
 重要限制：
 
-- Loader 目前只傳 `looty_session_id`、`looty_launch_token`、`looty_game_id`、`looty_currency`、`looty_gateway_url`。
-- Loader 目前沒有把 Supabase anon key、JWT、Authorization header 或任何 service role key 傳給遊戲。
-- `looty-gateway` 目前 `verify_jwt = true`，所以 wallet endpoints 需要授權 header。
-- 因此，遊戲前端目前不能只靠 `looty_launch_token` 直接呼叫 wallet endpoints。
-- 遊戲 AI 不要自己發明授權方式，也不要去抓 Looty bundle 裡的 env key。
-- 下一步若要讓遊戲正式呼叫 wallet endpoints，要先決定授權交接方式。
+- Loader 只傳 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url`。
+- Launch code 兩分鐘到期且只能交換一次；`gateway_token` 最長一小時並綁定 game session 與 action scopes。
+- Loader 不把 Supabase anon key、JWT、Authorization header 或任何 service role key 傳給遊戲。
+- `looty-gateway` v3 的 `verify_jwt = false`，由 Gateway 自己驗證 route、origin、launch code、gateway token、scope、session 與 rate limit。
+- 遊戲 AI 不要自己發明其他授權方式，也不要去抓 Looty bundle 裡的 env key。
 
 ## Session payload 建議
 
@@ -326,11 +331,11 @@ Game
 }
 ```
 
-如果未來有 demo / guest_credit / real，可加：
+目前 Gateway v1 會回：
 
 ```json
 {
-  "wallet_mode": "guest_credit"
+  "wallet_mode": "demo"
 }
 ```
 
@@ -347,7 +352,7 @@ Game
 
 `game_sessions` 是平台發給遊戲的啟動授權。
 
-`launch_token` 不應明文長期保存，資料庫只保存 hash。
+Launch code 與 gateway token 都不應明文長期保存，資料庫只保存 hash。
 
 `game_sessions`：
 
@@ -356,9 +361,15 @@ id
 player_account_id
 wallet_account_id
 game_id
-launch_token_hash
+launch_code_hash
+launch_code_expires_at
+launch_code_used_at
+gateway_token_hash
+gateway_token_expires_at
+gateway_token_scopes
 account_type
 currency
+wallet_mode
 status
 expires_at
 created_at
@@ -392,8 +403,9 @@ POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-
 
 要求：
 
-- Supabase Function `verify_jwt` 為 `true`。
-- 呼叫端需要帶 Supabase JWT / anon authorization header。
+- Supabase Function `verify_jwt` 為 `false`。
+- `create-session` 只接受 Looty production / localhost origin，並可驗證傳入的 Supabase user token；沒有 user token 時建立 Guest。
+- 外部遊戲不需要 Supabase key 或 Authorization header。
 - Function 內部才使用 service role 呼叫 DB RPC。
 - service role key 不能進前端、遊戲端或公開 repo。
 
@@ -414,12 +426,28 @@ POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-
   "session_id": "...",
   "game_id": "...",
   "player_account_ref": "...",
-  "launch_token": "...",
+  "launch_code": "...",
+  "launch_code_expires_at": "...",
   "account_type": "guest",
   "currency": "POINT",
+  "wallet_mode": "demo",
   "expires_at": "..."
 }
 ```
+
+Launch code exchange：
+
+```http
+POST /functions/v1/looty-gateway/exchange
+```
+
+```json
+{
+  "launch_code": "..."
+}
+```
+
+回傳 `gateway_token`、到期時間與 action scopes。Launch code 交換成功後立刻失效。
 
 Wallet endpoints：
 
@@ -433,24 +461,24 @@ POST /functions/v1/looty-gateway/close-round
 
 Wallet endpoint 共通要求：
 
-- 呼叫端要帶 Supabase JWT / anon authorization header。
-- body 要帶 `launch_token`。
+- body 要帶交換後的 `gateway_token`。
 - `bet` / `payout` / `refund` 要帶 `round_id`、`amount`、`idempotency_key`。
 - `metadata` 可選，但必須是 object。
 - service role key 只存在 Edge Function 環境，不進遊戲前端。
+- Request body 上限 16 KiB；各 route 有 DB-backed IP rate limit。
 
 目前授權狀態：
 
-- Looty Loader 呼叫 `create-session` 時，使用 Looty 前端自己的 Supabase client。
-- Loader 不會把 Supabase anon key 或 JWT 傳給 iframe 遊戲。
-- 因此，下列 wallet endpoint 範例是 **Gateway 契約範例**，不是表示遊戲前端現在已經能直接呼叫。
-- 若要讓遊戲前端直接呼叫，必須先補一個明確設計，例如短期 gateway token、由 Loader 代理、或讓遊戲 repo 以安全方式配置公開 anon key。
+- Looty Loader 呼叫 `create-session`，只把一次性 launch code 傳給 iframe。
+- 遊戲交換後可直接用 `gateway_token` 呼叫 Gateway v1，不需要任何 Supabase key。
+- `gateway_token` 只放執行中記憶體，重新整理時由 Loader 建立新 session。
+- 目前 `wallet_mode = demo`；正式金流仍需可信任遊戲後端或外部 wallet adapter，不能把瀏覽器派彩當作正式裁決。
 
 `balance` body：
 
 ```json
 {
-  "launch_token": "..."
+  "gateway_token": "..."
 }
 ```
 
@@ -458,7 +486,7 @@ Wallet endpoint 共通要求：
 
 ```json
 {
-  "launch_token": "...",
+  "gateway_token": "...",
   "round_id": "round-001",
   "amount": 10,
   "idempotency_key": "game-round-001-bet",
@@ -472,7 +500,7 @@ Wallet endpoint 共通要求：
 
 ```json
 {
-  "launch_token": "...",
+  "gateway_token": "...",
   "round_id": "round-001",
   "amount": 18,
   "idempotency_key": "game-round-001-payout",
@@ -486,7 +514,7 @@ Wallet endpoint 共通要求：
 
 ```json
 {
-  "launch_token": "...",
+  "gateway_token": "...",
   "round_id": "round-001",
   "amount": 10,
   "idempotency_key": "game-round-001-refund",
@@ -500,7 +528,7 @@ Wallet endpoint 共通要求：
 
 ```json
 {
-  "launch_token": "...",
+  "gateway_token": "...",
   "round_id": "round-001"
 }
 ```
@@ -508,11 +536,14 @@ Wallet endpoint 共通要求：
 注意：
 
 - 不存在 slug 會回 `404 game is not available`，不建立 session。
-- 無效或過期 `launch_token` 會回 `404 game session is not active`。
+- 無效、過期或 scope 不符的 `gateway_token` 會回 `404 game session is not active`。
+- 無效、過期或已使用的 launch code 會回 `404 launch code is invalid or expired`。
 - 缺必要參數會回 `400`。
+- 超過 rate limit 會回 `429`。
 - 重送同一個 `idempotency_key` 不會重複扣款或重複派彩。
+- Round 以 `game_session_id + round_id` 隔離；一個 session 不能關閉另一個 session 的 round。
 
-遊戲端不得保存 `launch_token` 到長期 storage。可以放在執行中的記憶體狀態，重新整理頁面時由 Loader 重新建立 session。
+遊戲端不得保存 `launch_code` 或 `gateway_token` 到長期 storage。`gateway_token` 只放執行中記憶體，重新整理頁面時由 Loader 重新建立 session。
 
 ## 建議 API / RPC
 
@@ -520,6 +551,7 @@ DB 層第一版已建立：
 
 ```text
 create_game_session
+exchange_game_launch_code
 wallet_get_balance
 wallet_bet
 wallet_payout
@@ -536,9 +568,11 @@ upgrade_guest_account
 底層 helper 包含：
 
 ```text
-looty_hash_launch_token
+looty_hash_secret
 looty_active_session
 looty_apply_wallet_transaction
+looty_consume_gateway_rate_limit
+looty_cleanup_gateway_runtime
 ```
 
 但給遊戲看的語意建議保持：
@@ -578,7 +612,7 @@ Looty Platform
 ```
 
 - Looty 負責玩家身份、game session、錢包與交易流水。
-- 外部遊戲只認 Looty 給的 session 或 launch token。
+- 外部遊戲只認 Looty 給的 session、launch code 或 gateway token。
 - 外部遊戲透過 Looty wallet API 請求下注、派彩、退款。
 - 外部遊戲不直接讀寫 Looty Supabase。
 - 外部遊戲不保存 Looty 玩家隱私資料。
@@ -664,6 +698,7 @@ Looty Platform
 - `wallet_transactions`
 - `game_sessions`
 - `game_rounds`
+- `gateway_rate_limits`
 
 已移除或不再使用：
 
@@ -681,16 +716,21 @@ Looty Platform
 - `20260710010000_create_game_session_wallet_rpc.sql`
 - `20260710011000_restrict_game_session_wallet_rpc_grants.sql`
 - `20260710013000_fix_wallet_rpc_variable_conflicts.sql`
+- `20260710140000_secure_admin_game_access.sql`
+- `20260710141000_create_gateway_v1_session_auth.sql`
+- `20260710142000_bind_rounds_to_game_sessions.sql`
+- `20260710143000_add_gateway_runtime_limits.sql`
 
 已部署 Edge Function：
 
-- `looty-gateway`
+- `looty-gateway` v3，`verify_jwt=false`，由 Gateway 自行驗證。
 
 注意：
 
 - `games` / `public_games_v1` / `admin_users` 是目前前台與 Admin 正在使用的核心資料。
-- 5 張平台骨架表已開 RLS，目前沒有開前端讀寫 policy。
+- 5 張平台骨架表與 `gateway_rate_limits` 已開 RLS，沒有前端讀寫 policy，anon / authenticated table grants 已撤銷。
 - Game session / wallet RPC 目前只開給 `service_role`，不要從前端直接呼叫。
+- `games` 只允許通過 `is_looty_admin()` 的 authenticated 使用者管理；前端不直接讀整張 `admin_users`。
 - 新平台錢包不要沿用 `player_balances`。
 - 玩家資料用 `player_accounts`，不要復活 `players`。
 - 錢包資料用 `wallet_accounts` + `wallet_transactions`，保留交易流水、局號與 idempotency。
@@ -707,12 +747,11 @@ Looty Platform
 - `wallet_accounts.balance` 是否只是目前餘額快取，或是否要完全以 `wallet_transactions` 重算。
 - 第一版是否立刻使用 `locked_balance`。
 - 第一版是否需要 `wallet_type`。
-- 遊戲前端呼叫 wallet endpoint 時，授權 header 要由 Loader 代理、短期 gateway token、遊戲 repo env，還是其他方式處理。
 
 ## 實作提醒
 
 - 不要先做完整會員中心再做遊戲 session。
-- Loader 已接 `looty-gateway/create-session`。
+- Loader 已接 `looty-gateway/create-session`，遊戲接入時使用 `exchange` 取得短效 `gateway_token`。
 - 不要在 Looty repo 任務中直接修改遊戲本體 repo。
 - 下一步若要接遊戲本體，必須由使用者明確指定哪一款遊戲，並切到該遊戲 repo 執行。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
