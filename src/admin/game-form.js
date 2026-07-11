@@ -28,7 +28,7 @@ function checked(id) {
 function parseSortOrder(rawValue) {
   const value = String(rawValue || "").trim();
 
-  if (!value) return { ok: true, value: null };
+  if (!value) return { ok: true, value: 0 };
   if (!/^-?\d+$/.test(value)) {
     return { ok: false, msg: "sort order 只能填整數" };
   }

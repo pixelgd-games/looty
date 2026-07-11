@@ -203,7 +203,7 @@ Admin form：
 
 - 新增 / 編輯共用。
 - 驗證 `slug` 只能是小寫英數與 `-`。
-- 驗證 `sort_order` 只能是整數或空值。
+- 驗證 `sort_order` 只能是整數或空值，空值會使用 `0`。
 - 驗證 `launch_url` 只能是 `http(s)` 或 `/` 開頭站內路徑。
 - 已上架遊戲必須有 `launch_url`。
 
@@ -536,6 +536,12 @@ Smoke 目標：
 - `color-guess` Loader 可建立新 session 並載入 iframe。
 - Iframe URL 有 `looty_launch_code`、`looty_exchange_url`、`looty_wallet_mode=demo`，沒有舊 `looty_launch_token`。
 - Gateway security smoke 已驗證 body limit、rate limit、一次性 code、token、idempotency 與跨 session round 隔離。
+
+2026-07-11 Ocean Battle 上架確認：
+
+- `ocean-battle` 已以 `type = fish`、`supports_live = false`、`published = true` 上架。
+- 正式 Lobby 可顯示 Ocean Battle，Loader 可建立 session 並載入 `https://ocean-battle.pages.dev/` iframe。
+- Ocean Battle 目前不接 wallet，遊戲本體只忽略 Looty query params，沒有修改遊戲 repo。
 
 Cloudflare 操作提醒：
 

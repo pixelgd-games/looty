@@ -113,3 +113,4 @@
 - 2026-07-10 已驗證 Gateway 可完成 create-session、exchange、balance、payout、bet、idempotency、跨 session round 隔離、close-round 流程。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 - 2026-07-10 Cloudflare Pages deployment `9994a81` 已 Active；production Lobby、Admin 與 `color-guess` Loader 已驗證通過，iframe 不再包含舊 `looty_launch_token`。
+- 2026-07-11 已上架 `ocean-battle`：`type = fish`、`supports_live = false`、`published = true`、`launch_url = https://ocean-battle.pages.dev/`；Lobby -> Loader -> iframe 已驗證通過，沒有修改遊戲本體。
