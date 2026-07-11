@@ -114,3 +114,4 @@
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
 - 2026-07-10 Cloudflare Pages deployment `9994a81` 已 Active；production Lobby、Admin 與 `color-guess` Loader 已驗證通過，iframe 不再包含舊 `looty_launch_token`。
 - 2026-07-11 已上架 `ocean-battle`：`type = fish`、`supports_live = false`、`published = true`、`launch_url = https://ocean-battle.pages.dev/`；Lobby -> Loader -> iframe 已驗證通過，沒有修改遊戲本體。
+- 2026-07-11 已上架 `speed-rush`：`type = arcade`、`supports_live = false`、`published = true`、`launch_url = https://speed-rush.pages.dev/`；Lobby -> Loader -> iframe 已驗證通過，目前押注與賠付只是 H5 client 展示，沒有接 Looty wallet 或修改遊戲本體。

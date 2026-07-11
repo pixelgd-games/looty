@@ -37,6 +37,7 @@ Looty 是平台入口與玩家平台層。
 - `lord-of-gomoku`
 - `monster-lab-dev`
 - `ocean-battle`
+- `speed-rush`
 
 Looty 現在只是在 iframe URL 旁邊多帶 Looty session 參數。舊遊戲如果不讀這些參數，仍應照常顯示。
 

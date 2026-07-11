@@ -543,6 +543,12 @@ Smoke 目標：
 - 正式 Lobby 可顯示 Ocean Battle，Loader 可建立 session 並載入 `https://ocean-battle.pages.dev/` iframe。
 - Ocean Battle 目前不接 wallet，遊戲本體只忽略 Looty query params，沒有修改遊戲 repo。
 
+2026-07-11 Speed-Rush 上架確認：
+
+- `speed-rush` 已以 `type = arcade`、`supports_live = false`、`published = true` 上架。
+- 正式 Lobby 可顯示 Speed-Rush，Loader 可建立 session 並載入 `https://speed-rush.pages.dev/` iframe。
+- Speed-Rush 目前的押注、餘額、賽果與賠付都是 H5 client 展示，不接 Looty wallet，也沒有修改遊戲 repo。
+
 Cloudflare 操作提醒：
 
 - 這台 Chrome 可能有多個 Cloudflare 帳號；操作 Looty 前先確認左上角帳號是 `pixelgd.games@gmail.com`。
