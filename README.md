@@ -14,6 +14,8 @@ Looty 是 Flash 系統裡的遊戲入口 / Lobby / 輕量 Admin 前端。
    - MVP 產品邊界、目前不做什麼、下一步。
 4. `FLASH.md`
    - Flash 大系統背景，只看責任邊界，不當作 repo 細節真相。
+5. `KNOWN_ISSUES.md`
+   - 已確認的技術問題、風險、改善方向與處理狀態，只給 AI / Codex 讀。
 
 ## 專案定位
 

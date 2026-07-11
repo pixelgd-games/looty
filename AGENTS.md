@@ -10,10 +10,12 @@
 2. `GAME_PLATFORM_INTEGRATION.md`
 3. `LOOTY_MVP.md`
 4. `FLASH.md`
+5. `KNOWN_ISSUES.md`
 
 `README.md` 是目前 repo 實作真相來源。
 `GAME_PLATFORM_INTEGRATION.md` 是給 Looty 與遊戲接入 AI 的責任邊界。
 `FLASH.md` 只看大系統背景，不當作 Looty repo 細節真相。
+`KNOWN_ISSUES.md` 記錄已確認問題與改善方向；不要看到問題就自行施工。
 
 ## 回答方式
 
