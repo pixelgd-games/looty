@@ -42,7 +42,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 
 ## 目前狀態
 
-截至 2026-07-10：
+截至 2026-07-13：
 
 - 技術棧是 Vanilla JS + Vite，多頁靜態站。
 - Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
@@ -62,6 +62,8 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
 - Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
+- Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess` 已使用。
+- Lobby 已有手機橫向版面：觸控低高度橫向裝置顯示 4 欄，PC 與手機直向維持原版面。
 
 ## 目前工作方向
 
@@ -110,6 +112,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - `src/styles/theme.css`: 前台基礎樣式。
 - `src/styles/lobby.css`: Lobby 樣式。
 - `public/hero/looty-hero-main.webp`: 首頁主視覺。
+- `public/games/<slug>/cover.webp`: Looty 自管遊戲封面。
 - `supabase/functions/looty-gateway/index.ts`: Looty Gateway Edge Function。
 
 ## Lobby 資料流
@@ -135,6 +138,15 @@ Lobby 讀取欄位：
 - `sort_order`
 
 `type` / `supports_live` 保留在資料模型中，但目前不作為首頁分類 UI。
+
+## 遊戲封面規格
+
+- 比例：`3:4`。
+- 尺寸：`750 x 1000`。
+- 格式：WebP。
+- 路徑：`public/games/<slug>/cover.webp`。
+- Admin `thumbnail` 使用 `/games/<slug>/cover.webp`。
+- 遊戲商提供原圖，由 Looty 統一裁切、壓縮、存放與上架；不要把 Lobby 封面放進遊戲本體 repo。
 
 ## Game Loader 資料流
 
@@ -550,6 +562,13 @@ Smoke 目標：
 - `speed-rush` 已以 `type = arcade`、`supports_live = false`、`published = true` 上架。
 - 正式 Lobby 可顯示 Speed-Rush，Loader 可建立 session 並載入 `https://speed-rush.pages.dev/` iframe。
 - Speed-Rush 目前的押注、餘額、賽果與賠付都是 H5 client 展示，不接 Looty wallet，也沒有修改遊戲 repo。
+
+2026-07-12 Lobby 封面與橫向版面確認：
+
+- `speed-rush`、`ocean-battle`、`color-guess` 已改用 Looty 自管 `750 x 1000` WebP 封面。
+- 正式 Lobby 已驗證三張封面正常載入。
+- 手機橫向版面已加入，觸控低高度橫向裝置使用 4 欄並縮小 Hero、間距、標題與按鈕。
+- PC 與手機直向版面不受影響。
 
 Cloudflare 操作提醒：
 

@@ -43,6 +43,9 @@
 - 不把 Flash 兄弟模組責任硬塞進 Looty。
 - 遊戲不要自己登入玩家，也不要直接改玩家餘額。
 - 在 Looty repo 任務中不要修改任何遊戲本體 repo；只有使用者明確指定某一款遊戲並切到該遊戲 repo 時，才處理遊戲本體接入。
+- Lobby 遊戲封面統一使用 `3:4`、`750 x 1000` WebP。
+- 遊戲商提供原圖後，由 Looty AI 裁切、壓縮並放到 `public/games/<slug>/cover.webp`。
+- Lobby 封面屬於 Looty 平台素材，不要放進或修改遊戲本體 repo。
 
 ## Supabase 規則
 
@@ -117,3 +120,5 @@
 - 2026-07-10 Cloudflare Pages deployment `9994a81` 已 Active；production Lobby、Admin 與 `color-guess` Loader 已驗證通過，iframe 不再包含舊 `looty_launch_token`。
 - 2026-07-11 已上架 `ocean-battle`：`type = fish`、`supports_live = false`、`published = true`、`launch_url = https://ocean-battle.pages.dev/`；Lobby -> Loader -> iframe 已驗證通過，沒有修改遊戲本體。
 - 2026-07-11 已上架 `speed-rush`：`type = arcade`、`supports_live = false`、`published = true`、`launch_url = https://speed-rush.pages.dev/`；Lobby -> Loader -> iframe 已驗證通過，目前押注與賠付只是 H5 client 展示，沒有接 Looty wallet 或修改遊戲本體。
+- 2026-07-12 已上架 Looty 自管封面：`speed-rush`、`ocean-battle`、`color-guess`，並驗證正式 Lobby 正常顯示。
+- 2026-07-12 已加入手機橫向 Lobby 版面，觸控低高度橫向裝置改為 4 欄，PC 與手機直向不受影響。
