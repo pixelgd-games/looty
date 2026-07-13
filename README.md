@@ -42,7 +42,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 
 ## 目前狀態
 
-截至 2026-07-13：
+截至 2026-07-14：
 
 - 技術棧是 Vanilla JS + Vite，多頁靜態站。
 - Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
@@ -62,7 +62,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
 - Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
-- Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess` 已使用。
+- Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess`、`valkyrie-dragons-hoard` 已使用。
 - Lobby 已有手機橫向版面：觸控低高度橫向裝置顯示 4 欄，PC 與手機直向維持原版面。
 
 ## 目前工作方向
@@ -569,6 +569,14 @@ Smoke 目標：
 - 正式 Lobby 已驗證三張封面正常載入。
 - 手機橫向版面已加入，觸控低高度橫向裝置使用 4 欄並縮小 Hero、間距、標題與按鈕。
 - PC 與手機直向版面不受影響。
+
+2026-07-14 Valkyrie: Dragon's Hoard 上架確認：
+
+- `valkyrie-dragons-hoard` 已以 `type = slot`、`supports_live = false`、`published = true` 上架。
+- `launch_url` 為 `https://valkyrie-dragons-hoard.pages.dev/`。
+- 封面已使用 Looty 自管 `/games/valkyrie-dragons-hoard/cover.webp`，規格為 `750 x 1000` WebP。
+- 正式 Lobby 可顯示 Valkyrie: Dragon's Hoard，Loader 可建立 session 並載入 iframe。
+- Valkyrie: Dragon's Hoard 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
 
 Cloudflare 操作提醒：
 
