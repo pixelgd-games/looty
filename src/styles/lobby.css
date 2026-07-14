@@ -168,13 +168,35 @@ body{
   text-decoration:none;
   transition:transform .18s ease, box-shadow .18s ease;
   isolation:isolate;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  user-select:none;
 }
 
-.game-tile-poster:hover{
-  transform:translateY(-2px);
+.game-tile-poster:focus{
+  outline:none;
+}
+
+.game-tile-poster:focus-visible{
   box-shadow:
     0 24px 44px rgba(0,0,0,.3),
-    0 0 0 1px rgba(235,255,61,.2);
+    0 0 0 3px rgba(235,255,61,.82);
+}
+
+.game-tile-poster:active{
+  transform:scale(.985);
+  box-shadow:
+    0 14px 28px rgba(0,0,0,.32),
+    0 0 0 1px rgba(235,255,61,.24);
+}
+
+@media (hover:hover) and (pointer:fine){
+  .game-tile-poster:hover{
+    transform:translateY(-2px);
+    box-shadow:
+      0 24px 44px rgba(0,0,0,.3),
+      0 0 0 1px rgba(235,255,61,.2);
+  }
 }
 
 .game-tile-poster-image{
@@ -185,6 +207,11 @@ body{
   object-position:center;
   transform:scale(1.006);
   transform-origin:center;
+  transition:filter .18s ease;
+}
+
+.game-tile-poster:active .game-tile-poster-image{
+  filter:brightness(1.08) saturate(1.04);
 }
 
 .game-tile-poster.is-empty::before{
