@@ -34,6 +34,7 @@ Looty 是平台入口與玩家平台層。
 目前已上架的遊戲本體都沒有因為 Loader 接 session 而被修改：
 
 - `color-guess`
+- `dead-county`
 - `lord-of-gomoku`
 - `monster-lab-dev`
 - `ocean-battle`
