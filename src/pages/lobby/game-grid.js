@@ -2,7 +2,6 @@ import { buildGameUrl, getGameTypeLabel } from "./utils.js"
 
 const TEXT = {
   openGame: "Open game",
-  play: "Play",
   emptyTitle: "No games available",
   emptyCopy: "Published games will appear here.",
   errorTitle: "Game list failed to load",
@@ -111,12 +110,7 @@ function createTileBody(game, gameUrl) {
 
   tags.append(type)
 
-  const action = document.createElement("a")
-  action.className = "game-tile-play"
-  action.href = gameUrl
-  action.textContent = TEXT.play
-
-  body.append(title, tags, action)
+  body.append(title, tags)
   return body
 }
 

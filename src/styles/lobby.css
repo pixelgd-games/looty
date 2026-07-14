@@ -229,26 +229,6 @@ body{
   text-transform:uppercase;
 }
 
-.game-tile-play{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:42px;
-  padding:0 18px;
-  border-radius:999px;
-  background:var(--accent);
-  color:#0b1012;
-  font-size:14px;
-  font-weight:950;
-  text-decoration:none;
-  transition:transform .18s ease, background .18s ease;
-}
-
-.game-tile-play:hover{
-  transform:translateY(-1px);
-  background:#f3ff74;
-}
-
 @media (min-width:1280px){
   .game-tile-grid{
     grid-template-columns:repeat(4,minmax(0,1fr));
@@ -307,11 +287,6 @@ body{
     font-size:11px;
   }
 
-  .game-tile-play{
-    min-height:32px;
-    padding:0 12px;
-    font-size:12px;
-  }
 }
 
 @media (orientation:landscape) and (max-width:1024px) and (max-height:560px) and (hover:none) and (pointer:coarse){
@@ -378,9 +353,4 @@ body{
     font-size:9px;
   }
 
-  .game-tile-play{
-    min-height:28px;
-    padding:0 8px;
-    font-size:11px;
-  }
 }
