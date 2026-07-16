@@ -37,6 +37,7 @@ Looty 是平台入口與玩家平台層。
 - `dead-county`
 - `lord-of-gomoku`
 - `monster-lab-dev`
+- `ninja-four-elements`
 - `ocean-battle`
 - `speed-rush`
 - `valkyrie-dragons-hoard`

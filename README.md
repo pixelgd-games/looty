@@ -42,7 +42,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 
 ## 目前狀態
 
-截至 2026-07-14：
+截至 2026-07-16：
 
 - 技術棧是 Vanilla JS + Vite，多頁靜態站。
 - Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
@@ -62,7 +62,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
 - Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
 - 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
-- Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess`、`valkyrie-dragons-hoard`、`dead-county` 已使用。
+- Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess`、`valkyrie-dragons-hoard`、`dead-county`、`ninja-four-elements` 已使用。
 - Lobby 已有手機橫向版面：觸控低高度橫向裝置顯示 4 欄，PC 與手機直向維持原版面。
 
 ## 目前工作方向
@@ -585,6 +585,14 @@ Smoke 目標：
 - 封面已使用 Looty 自管 `/games/dead-county/cover.webp`，規格為 `750 x 1000` WebP。
 - 正式 Lobby 可顯示 Dead County，Loader 可建立 session 並載入 iframe。
 - Dead County 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
+
+2026-07-16 Ninja: Four Elements 上架確認：
+
+- `ninja-four-elements` 已以 `type = slot`、`supports_live = false`、`published = true` 上架。
+- `launch_url` 為 `https://ninja-four-elements.pages.dev/`。
+- 封面已使用 Looty 自管 `/games/ninja-four-elements/cover.webp`，規格為 `750 x 1000` WebP。
+- 正式 Lobby 可顯示 Ninja: Four Elements，Loader 可建立 session 並載入 iframe。
+- Ninja: Four Elements 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
 
 Cloudflare 操作提醒：
 
