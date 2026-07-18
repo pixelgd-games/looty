@@ -96,6 +96,7 @@ Looty 可以讓使用者把網站加到手機桌面，形式接近手機 app，�
 - 首頁右上角顯示「加入桌面」入口。
 - `public/manifest.webmanifest` 控制 app 名稱、啟動路徑、顯示模式與 icon。
 - Looty app icon 放在 `public/icons/looty-app-icon-*.png`。
+- App icon 使用滿版深色背景與中央符號，避免 Android PWA 啟動畫面顯示放大的內嵌圓角圖。
 - 目前刻意不註冊 service worker，也不做離線快取，避免遊戲與封面更新後手機仍看到舊版本。
 - 現有 Admin 只管理遊戲上架資料；平台 logo / app icon 之後若要讓後台改，應另做「平台設定」，不要塞進 games 表單。
 
