@@ -604,12 +604,12 @@ Smoke 目標：
 - 正式 Lobby 可顯示 Ninja: Four Elements，Loader 可建立 session 並載入 iframe。
 - Ninja: Four Elements 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
 
-2026-07-18 Arrgh! Hoops Admin staging 確認：
+2026-07-18 Arrgh! Hoops 上架測試確認：
 
-- `arrgh-hoops` 已以 `type = arcade`、`supports_live = false`、`published = false` 加入 Admin 資料。
+- `arrgh-hoops` 已以 `type = arcade`、`supports_live = false`、`published = true` 上架測試。
 - `launch_url` 為 `https://arrgh-hoops.pages.dev/`。
 - 封面已使用 Looty 自管 `/games/arrgh-hoops/cover.webp`，規格為 `750 x 1000` WebP。
-- 因為 `published = false`，目前不會出現在正式 Lobby，也不走公開 Game Loader 驗證。
+- 正式 Lobby 可顯示 Arrgh! Hoops，Loader 可建立 session 並載入 iframe。
 - Arrgh! Hoops 目前維持 Demo / free-play，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
 
 Cloudflare 操作提醒：
