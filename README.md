@@ -42,7 +42,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 
 ## 目前狀態
 
-截至 2026-07-16：
+截至 2026-07-18：
 
 - 技術棧是 Vanilla JS + Vite，多頁靜態站。
 - Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
@@ -51,6 +51,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Game Loader 用 `slug` 查 `public_games_v1`，先呼叫 `looty-gateway/create-session`，再把 Looty session 參數附加到 iframe `launch_url`。
 - 目前沒有修改任何已上架遊戲本體；舊遊戲忽略 Looty query params 也應可照常顯示。
 - 前台會員登入已從 Lobby 移除，首頁維持純公開遊戲入口。
+- Lobby 右上角有「加入桌面」入口，搭配 PWA manifest 與 Looty app icon；目前不註冊 service worker、不做離線快取。
 - Admin 使用 Google OAuth + `admin_users` email 白名單。
 - Admin 可管理 `games` 的基本上架欄位。
 - 前台 / Loader / Admin 共用錯誤視窗與 `LOOTY-*` 錯誤代碼。
@@ -88,6 +89,16 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Admin New Game: `/admin/games/new/`
 - Admin Edit Game: `/admin/games/edit/?id=<uuid>`
 
+## 手機桌面入口
+
+Looty 可以讓使用者把網站加到手機桌面，形式接近手機 app，但目前不是 Google Play / App Store 上架 app。
+
+- 首頁右上角顯示「加入桌面」入口。
+- `public/manifest.webmanifest` 控制 app 名稱、啟動路徑、顯示模式與 icon。
+- Looty app icon 放在 `public/icons/looty-app-icon-*.png`。
+- 目前刻意不註冊 service worker，也不做離線快取，避免遊戲與封面更新後手機仍看到舊版本。
+- 現有 Admin 只管理遊戲上架資料；平台 logo / app icon 之後若要讓後台改，應另做「平台設定」，不要塞進 games 表單。
+
 ## 主要檔案
 
 - `index.html`: Lobby 入口。
@@ -111,6 +122,8 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - `src/ui/error-modal.js`: 共用錯誤視窗與錯誤碼。
 - `src/styles/theme.css`: 前台基礎樣式。
 - `src/styles/lobby.css`: Lobby 樣式。
+- `public/manifest.webmanifest`: 手機桌面 / PWA manifest。
+- `public/icons/looty-app-icon-*.png`: Looty 手機桌面 app icon。
 - `public/hero/looty-hero-main.webp`: 首頁主視覺。
 - `public/games/<slug>/cover.webp`: Looty 自管遊戲封面。
 - `supabase/functions/looty-gateway/index.ts`: Looty Gateway Edge Function。
@@ -639,6 +652,7 @@ Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。�
 
 - `admin_users` 之後可視需要從 email 白名單升級為 auth user id。
 - 前台會員登入停用，尚未設計新的 `/me` 或會員中心。
+- 平台 logo / app icon 後續可做成平台設定頁，目前先用靜態素材。
 - Cloudflare Access 未啟用，可視安全需求再加。
 - 正式網域與舊 Direct Upload Pages 退場方式等正式營運前再決定。
 - Automated tests 還不完整。

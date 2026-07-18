@@ -42,7 +42,8 @@ body{
 .site-header{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:space-between;
+  gap:12px;
   min-height:38px;
   padding:0 0 12px;
 }
@@ -50,6 +51,89 @@ body{
 .site-header .brand-mark{
   font-size:30px;
   line-height:1;
+}
+
+.header-actions{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  min-width:0;
+}
+
+.install-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  padding:0 12px;
+  border:1px solid rgba(235,255,61,.28);
+  border-radius:999px;
+  background:rgba(235,255,61,.08);
+  color:var(--accent);
+  font:inherit;
+  font-size:12px;
+  font-weight:850;
+  letter-spacing:0;
+  white-space:nowrap;
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+.install-button[hidden],
+.install-help[hidden]{
+  display:none;
+}
+
+.install-button:focus{
+  outline:none;
+}
+
+.install-button:focus-visible{
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.18),
+    0 0 0 3px rgba(235,255,61,.48);
+}
+
+.install-button:active{
+  transform:scale(.98);
+  background:rgba(235,255,61,.14);
+}
+
+@media (hover:hover) and (pointer:fine){
+  .install-button:hover{
+    border-color:rgba(235,255,61,.44);
+    background:rgba(235,255,61,.13);
+  }
+}
+
+.install-help{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  z-index:30;
+  width:min(260px,calc(100vw - 32px));
+  padding:12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  background:rgba(10,14,18,.96);
+  box-shadow:0 18px 40px rgba(0,0,0,.36);
+}
+
+.install-help-title{
+  color:#fbfcff;
+  font-size:13px;
+  font-weight:850;
+  line-height:1.2;
+}
+
+.install-help-copy{
+  margin-top:5px;
+  color:rgba(218,223,232,.76);
+  font-size:12px;
+  line-height:1.45;
 }
 
 /* Hero */
@@ -276,6 +360,12 @@ body{
     font-size:26px;
   }
 
+  .install-button{
+    min-height:28px;
+    padding:0 10px;
+    font-size:11px;
+  }
+
   .hero{
     width:100%;
   }
@@ -328,6 +418,12 @@ body{
 
   .site-header .brand-mark{
     font-size:22px;
+  }
+
+  .install-button{
+    min-height:24px;
+    padding:0 9px;
+    font-size:10px;
   }
 
   .hero{
