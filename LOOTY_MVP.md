@@ -112,6 +112,8 @@ Looty 核心只固定玩家 / Guest、遊戲目錄、launch session、round、id
 
 遊戲不接觸現金、匯率、付款訂單，也不自行發放或修改 POINT。非博弈遊戲不應硬套 `bet / payout`，未來應使用 `entry_fee / purchase / reward / refund` 等交易語意，並用 idempotency 避免重新整理或斷線重連時重複扣款。
 
+小遊戲或非博弈 H5 遊戲可以先作為公開遊戲入口上架測試。這類遊戲現階段應維持 Demo / free-play，不接 Looty Wallet，`type` 優先使用 `casual` 或 `arcade`，遊戲端可以忽略 Looty session query params。若只是測試 Admin 資料，不想出現在 Lobby，則保持 `published = false`。
+
 POINT 性質至少要能區分：
 
 - Demo POINT：測試使用，不可提款或兌現。

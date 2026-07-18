@@ -230,6 +230,16 @@ Admin form：
 - `casual`
 - `adult`
 
+小遊戲 / 非博弈 H5 遊戲也可以先上架測試：
+
+- 優先使用 `casual` 或 `arcade`，不要硬塞成 `slot` / `fish`。
+- `supports_live` 通常先用 `false`。
+- 要出現在正式 Lobby 才設 `published = true`；只先放進 Admin 則用 `published = false`。
+- 目前可維持 Demo / free-play，不接 Looty Wallet。
+- 遊戲可以先忽略 Looty session query params。
+- 不要把分數、獎勵、入場費或一般遊玩流程偽裝成 `bet / payout`。
+- `name`、`slug`、`launch_url`、`thumbnail` 應使用正式感命名，不要帶 `dev`、`test`、`prototype` 或雛形字樣。
+
 ## 資料契約
 
 `games` 是 Admin 管理來源，欄位：

@@ -264,6 +264,8 @@ created_at
 
 責任邊界：
 
+- 小遊戲 / 非博弈 H5 遊戲可以先以 `casual` 或 `arcade` 上架測試，維持 Demo / free-play，不接 Looty Wallet。
+- 這類遊戲可以先忽略 Looty session query params；正式接入前不要自行發明錢包、入場費或獎勵結算流程。
 - Looty 決定價格、扣款、退款、付款結果與入場資格。
 - Game 只接收平台授權，不自行收費、不決定匯率、不直接修改餘額。
 - 重新整理或斷線重連不能重複收費；每次購買或入場扣款都要有 idempotency key。
