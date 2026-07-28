@@ -4,8 +4,8 @@
 
 AI / Codex 閱讀順序：
 
-1. 先讀 `README.md`，確認 Looty repo 目前實作。
-2. 再讀 `LOOTY_MVP.md`，確認 MVP 產品邊界。
+1. 先讀 `../../README.md`，確認 Looty repo 目前實作。
+2. 再讀 `../product/PRODUCT_SCOPE.md`，確認正式產品邊界。
 3. 最後讀本文件，理解 Looty 在 Flash 裡的位置。
 
 不要把本文件當作 Looty repo 的欄位、路由、部署或短期策略真相來源。
@@ -114,12 +114,12 @@ Looty 在 Flash 裡的定位是：
 - 目前 repo 的實作細節
 - 當前資料表欄位與 view 契約
 - 現行 Admin 流程畫面
-- 臨時的 MVP 取捨或短期策略
+- 臨時的產品取捨或短期策略
 
 若要看 Looty repo 的目前實作與交付邊界，請優先參考：
 
-- `README.md`
-- `LOOTY_MVP.md`
+- `../../README.md`
+- `../product/PRODUCT_SCOPE.md`
 
 ## Looty 負責什麼
 

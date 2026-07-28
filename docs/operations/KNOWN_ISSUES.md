@@ -2,6 +2,8 @@
 
 這份文件只給 AI / Codex 讀，不是對外產品文件。
 
+目前 repo 實作真相以 `../../README.md` 為準。
+
 用途：
 
 - 記錄已確認的技術問題、風險與改善方向。
@@ -10,10 +12,10 @@
 
 ## 目前結論
 
-- 現有 MVP 架構可繼續使用，不需要重做。
+- 現有正式產品架構可繼續使用，不需要重做。
 - Lobby、Game Loader、Admin、Gateway 與 DB 的責任分工大致正確。
-- `npm run build`、`npm run smoke` 與遠端 Supabase DB lint 已通過。
-- 本機與遠端 11 筆 migrations 已確認同步。
+- 2026-07-23 `npm audit`、`npm run build` 與 `npm run smoke` 已通過；遠端 Supabase DB lint 先前已通過。
+- 2026-07-23 已確認 Looty linked true，本機與遠端 16 筆 migrations 全部同步。
 - 以下問題目前不阻擋公開 Demo 主路徑。
 
 ## 優先處理
@@ -42,18 +44,6 @@
 Game Loader 建立的 iframe 目前沒有 `sandbox` 或能力限制。現有遊戲多為不同網域，風險較低；但 Looty 也允許 `/` 開頭的同網域 `launch_url`，同網域遊戲可能接觸 Looty origin 的頁面與 storage。
 
 不要直接套用過度嚴格的 sandbox。應先確認遊戲需要的音訊、全螢幕、輸入、下載或其他能力，再建立平台規則。
-
-### 開發依賴漏洞
-
-狀態：待更新。
-
-2026-07-11 `npm audit` 檢查到：
-
-- Vite 7.3.2 有 Windows 開發伺服器相關漏洞。
-- ws 8.19.0 有記憶體洩漏 / DoS 漏洞。
-- esbuild 有低風險 Windows 開發環境漏洞。
-
-這些套件主要用於開發、建置與 smoke，不是 Looty 正式前台的直接執行環境。更新前仍需重新跑 build 與 smoke。
 
 ## 資料量增加後處理
 
@@ -120,6 +110,14 @@ Production Gateway security smoke 會建立正式 Demo 測試資料，不要在�
 - 集中管理 game type，避免 Lobby 與 Admin 選項不同步。
 - 第一款遊戲正式接 Looty wallet 時，再建立最小 Game Gateway client 或 API contract。
 - 優先補測試與逾時處理，不要為了模組化增加不必要抽象。
+
+## 已處理
+
+### 開發依賴漏洞
+
+2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild。
+
+`npm audit` 已是 0 vulnerabilities，build 與 smoke 已通過。專案維持 Vite 7，沒有為了追最新版升級到 Vite 8。
 
 ## 不列為問題
 

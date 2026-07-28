@@ -2,21 +2,93 @@
 
 這份文件只給 AI / Codex 讀。
 
+目前 repo 實作真相以 `../../README.md` 為準。
+
+這份文件主要規範遊戲如何接 Looty。CrazyGames Build、SDK、廣告、存檔與上架規則看 `CRAZYGAMES_INTEGRATION.md`。
+
 用途：
 
 - 讓 Looty AI 知道平台、遊戲、錢包、Gateway 的責任邊界。
 - 讓其他做遊戲的 AI 知道遊戲要怎麼接 Looty。
+- 讓同一款遊戲能用 Platform Client 隔離 Looty、CrazyGames 與 Demo。
 - 避免遊戲自己登入玩家、自己建玩家、自己改錢包。
 
 這不是對外 API 文件，也不是完整錢包系統規格。
 
-日期：2026-07-10。
+最後更新：2026-07-28。
 
 ## 一句話
 
 Looty 是平台入口與玩家平台層。
 
 遊戲只應接 Looty 給的啟動入口、session、一次性 launch code 與短效 gateway token。遊戲不登入玩家、不保存玩家身份、不直接寫 Looty Supabase、不直接改玩家餘額。
+
+## 雙平台遊戲架構
+
+這套雙平台架構只適用於非博弈遊戲。博弈相關產品不接 CrazyGames，也不建立 CrazyGames Client 或 CrazyGames Build。
+
+是否屬於博弈產品要看實際玩法與交易機制，不能只用 `games.type` 判斷。以投注、下注、派彩、可兌價值錢包、賭場或類賭博機制為核心的產品，只走 Looty 或另外核准的平台。
+
+非博弈遊戲要同時支援 Looty、CrazyGames 與本機 Demo 時，使用同一套遊戲本體，再用平台介面隔離差異：
+
+```text
+Shared Game
+  -> Platform Client
+    -> Looty Client
+    -> CrazyGames Client
+    -> Demo Client
+```
+
+遊戲本體只呼叫共通介面，不在關卡、物理、UI 或音效程式裡直接判斷平台。
+
+建議介面：
+
+```text
+platform.init()
+platform.gameplayStart()
+platform.gameplayStop()
+platform.loadProgress()
+platform.saveProgress()
+platform.requestMidgameAd()
+platform.requestRewardedAd()
+platform.getMuteState()
+platform.onMuteChanged()
+platform.capabilities
+platform.wallet.getBalance()
+platform.wallet.bet()
+platform.wallet.payout()
+platform.wallet.refund()
+platform.wallet.closeRound()
+```
+
+不是每個平台都支援所有功能。遊戲先讀 `platform.capabilities`，不支援的功能要關閉或提供正常替代流程，不可偷偷改用另一個平台的 Client。
+
+平台責任：
+
+- Looty Client：Gateway、session、餘額、下注、派彩、退款與 Round。
+- CrazyGames Client：Gameplay 事件、Data 存檔、廣告、平台靜音與適用的 User / 多人功能。
+- Demo Client：本機存檔與開發測試；不連正式錢包、不載入正式廣告。
+
+固定規則：
+
+- 博弈相關產品不建立 CrazyGames Client、CrazyGames Build 或 CrazyGames 上架素材。
+- 同一個 Git 專案、同一套玩法與素材、同一個遊戲版本號。
+- Looty 與 CrazyGames 使用不同發布入口、平台設定或 Build。
+- 平台以發布設定選定，runtime 偵測只做第二層驗證。
+- 不用「是否在 iframe」判斷平台，因為 Looty 與 CrazyGames 都可能使用 iframe。
+- 平台初始化完成前，不執行錢包、廣告或存檔操作。
+- CrazyGames Build 不呼叫 Looty Gateway。
+- Looty Build 不初始化 CrazyGames SDK，也不載入 CrazyGames 廣告。
+- CrazyGames Data 與 Demo 本機存檔由平台層切換，不混在遊戲本體。
+- 音訊優先順序是廣告暫停 / 平台強制靜音，再來才是玩家設定。
+
+Looty 一次性 launch code 要立即交換成 `gateway_token`。launch code 與 token 都只能留在記憶體，不可寫入 `localStorage`、`sessionStorage`、IndexedDB、Log 或 Analytics event；交換完成後應從遊戲網址移除敏感 query 參數。
+
+發布方式：
+
+- CrazyGames 上傳自己的 Build。
+- Looty 繼續載入獨立遊戲網址。
+- 兩邊可以來自同一個 commit 與版本，但不硬共用同一個正式 URL。
 
 ## 絕對邊界：Looty AI 不改遊戲本體
 
@@ -340,7 +412,7 @@ Game
 - Loader 只傳 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url`。
 - Launch code 兩分鐘到期且只能交換一次；`gateway_token` 最長一小時並綁定 game session 與 action scopes。
 - Loader 不把 Supabase anon key、JWT、Authorization header 或任何 service role key 傳給遊戲。
-- `looty-gateway` v3 的 `verify_jwt = false`，由 Gateway 自己驗證 route、origin、launch code、gateway token、scope、session 與 rate limit。
+- `looty-gateway` v4 的 `verify_jwt = false`，由 Gateway 自己驗證 route、origin、launch code、gateway token、scope、session 與 rate limit。
 - 遊戲 AI 不要自己發明其他授權方式，也不要去抓 Looty bundle 裡的 env key。
 
 ## Session payload 建議
@@ -786,7 +858,7 @@ Looty Platform
 - 下一步若要接遊戲本體，必須由使用者明確指定哪一款遊戲，並切到該遊戲 repo 執行。
 - 不要讓前端直接 `insert player_accounts`、`wallet_accounts`、`wallet_transactions`。
 - 玩家初始化、Guest 建立、錢包建立，應放在 DB RPC 或後端流程。
-- Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前 MVP blocker。
+- Admin 白名單之後可視需要從 email 升級到 auth user id，但不是目前交付的阻擋項目。
 - 錢包流程要預留 `idempotency_key`、`round_id`、交易識別與查帳資訊。
 
 ## Supabase 操作原則

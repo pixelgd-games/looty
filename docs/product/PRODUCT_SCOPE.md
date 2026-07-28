@@ -1,12 +1,12 @@
-# Looty MVP
+# Looty Product Scope
 
-這份文件只記錄 **MVP 產品邊界與下一步**。
+這份文件只記錄 **正式產品邊界、交付標準與下一步**。
 
-目前 repo 的實作細節、路由、欄位、部署與檔案位置，請看 `README.md`。不要在這份文件重複維護技術契約。
+目前 repo 的實作細節、路由、欄位、部署與檔案位置，請看 `../../README.md`。不要在這份文件重複維護技術契約。
 
 ## 一句話
 
-Looty MVP 要先把這條主路徑做穩：
+Looty 要持續把這條正式產品主路徑做穩：
 
 ```text
 看到遊戲 -> 點進遊戲 -> 成功啟動遊戲
@@ -14,7 +14,7 @@ Looty MVP 要先把這條主路徑做穩：
 
 同時讓遊戲資料可以在雲端後台維護。
 
-## MVP 成功條件
+## 目前產品成功條件
 
 1. 玩家能看到公開遊戲列表。
 2. 玩家能點進遊戲。
@@ -28,7 +28,7 @@ Looty MVP 要先把這條主路徑做穩：
 - Game Loader 已可從 `public_games_v1` 取 `launch_url` 並載入 iframe。
 - Game Loader 已有 loading overlay 與明確錯誤碼。
 - Admin Login 已可用 Google OAuth + `admin_users` 白名單。
-- Admin 頁面目前已有 Supabase session + `admin_users` 白名單保護，MVP 階段已足夠。
+- Admin 頁面目前已有 Supabase session + `admin_users` 白名單保護，符合目前產品階段的應用層需求。
 - Admin 已可管理 `games` 基本上架資料。
 - Admin 已支援 `launch_url` 與 `sort_order`。
 - Admin 列表已避免用資料字串拼 HTML。
@@ -51,7 +51,7 @@ Looty MVP 要先把這條主路徑做穩：
 
 ## 目前工作方向
 
-目前不是重做架構或補大型功能的階段。MVP 主路徑已經可用，接下來先以現有 Cloudflare Pages 網址和電腦版 Admin 驗證實際內容。
+目前不是重做架構或補大型功能的階段。正式產品主路徑已經可用，接下來先以現有 Cloudflare Pages 網址和電腦版 Admin 驗證實際內容。
 
 同時要先把平台與遊戲責任邊界整理清楚。未來會有兩種方向：外部遊戲接進 Looty、Looty 自己的遊戲接到外部平台。帳號、Guest、錢包、game session、Gateway 的分工要先在文件裡定好，不要等開始寫功能才混在一起。
 
@@ -61,7 +61,7 @@ Looty MVP 要先把這條主路徑做穩：
 2. 確認 Lobby 能看到公開遊戲。
 3. 確認 Game Loader 能用 `slug` 開啟正確遊戲。
 4. Gateway v1 授權交接已完成；若要驗證遊戲端，下一步由使用者指定一款乾淨遊戲 repo 做正式接入。
-5. 持續整理 `GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
+5. 持續整理 `../platform/GAME_PLATFORM_INTEGRATION.md` 的遊戲接入規則。
 6. 有具體問題時再針對該問題修正。
 
 現在不要主動切正式網域、重做 Admin、恢復會員中心 UI、做完整錢包功能或把 Flash 兄弟模組接進來。
@@ -203,7 +203,7 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 
 現階段不要把 Admin 做成完整營運系統。
 
-目前 Admin 已經需要 Supabase Google OAuth 登入，並會檢查 `admin_users` 白名單。這個保護在 MVP 階段已足夠，不需要為了 MVP 先加 Cloudflare Access，也不需要立刻把 `admin_users` 改成 auth user id。
+目前 Admin 已經需要 Supabase Google OAuth 登入，並會檢查 `admin_users` 白名單。這個保護符合目前產品階段需求，不需要先加 Cloudflare Access，也不需要立刻把 `admin_users` 改成 auth user id。
 
 目前 Admin 以電腦版可用為準，已能完成遊戲上架、下架、新增、編輯、刪除與排序等核心管理操作。手機版優化不是目前待辦，等實際需要再處理。
 
@@ -211,7 +211,7 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 
 ## 目前不做
 
-以下不是 MVP blocker：
+以下不是目前正式產品的交付阻擋項目：
 
 - 完整玩家帳號平台。
 - 前台會員中心 `/me`。
@@ -257,7 +257,7 @@ Admin 目前是 **輕量但可用** 的遊戲上架後台。
 
 ## 給 AI 的提醒
 
-- 不要把 `LOOTY_MVP.md` 當作欄位或路由真相來源。
-- 要改程式前，先讀 `README.md`。
-- 要理解大系統背景，再讀 `FLASH.md`。
-- MVP 的核心不是功能做滿，而是主路徑穩定。
+- 不要把 `PRODUCT_SCOPE.md` 當作欄位或路由真相來源。
+- 要改程式前，先讀 `../../README.md`。
+- 要理解大系統背景，再讀 `../platform/FLASH.md`。
+- 正式產品不代表一次做滿所有功能；核心是主路徑穩定、責任清楚、限制誠實。

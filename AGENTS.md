@@ -7,15 +7,30 @@
 進入專案後先讀：
 
 1. `README.md`
-2. `GAME_PLATFORM_INTEGRATION.md`
-3. `LOOTY_MVP.md`
-4. `FLASH.md`
-5. `KNOWN_ISSUES.md`
+2. `docs/platform/GAME_PLATFORM_INTEGRATION.md`
+3. `docs/platform/CRAZYGAMES_INTEGRATION.md`
+4. `docs/product/PRODUCT_SCOPE.md`
+5. `docs/platform/FLASH.md`
+6. `docs/operations/KNOWN_ISSUES.md`
+7. `docs/operations/ANALYTICS_MONITORING.md`
 
 `README.md` 是目前 repo 實作真相來源。
-`GAME_PLATFORM_INTEGRATION.md` 是給 Looty 與遊戲接入 AI 的責任邊界。
-`FLASH.md` 只看大系統背景，不當作 Looty repo 細節真相。
-`KNOWN_ISSUES.md` 記錄已確認問題與改善方向；不要看到問題就自行施工。
+`docs/platform/GAME_PLATFORM_INTEGRATION.md` 是 Looty 與遊戲的接入契約。
+`docs/platform/CRAZYGAMES_INTEGRATION.md` 是 CrazyGames Build、SDK、廣告、存檔與上架規範。
+`docs/platform/FLASH.md` 只看大系統背景，不當作 Looty repo 細節真相。
+`docs/operations/KNOWN_ISSUES.md` 記錄已確認問題與改善方向；不要看到問題就自行施工。
+`docs/operations/ANALYTICS_MONITORING.md` 記錄 Analytics、監控、會員與平台後續施工順序；沒有可靠資料的 KPI 不要先做假數字。
+
+新增內容時優先更新現有文件。除非出現新的獨立責任，不要新增重複文件。
+
+如果任務是製作或修改一款要同時發布到 Looty 與 CrazyGames 的遊戲，至少要讀兩份平台文件：
+
+1. `docs/platform/GAME_PLATFORM_INTEGRATION.md`
+2. `docs/platform/CRAZYGAMES_INTEGRATION.md`
+
+遊戲使用同一套本體，平台差異放在 Looty Client、CrazyGames Client、Demo Client。不要只靠 iframe 判斷平台，也不要讓任何 Build 同時呼叫兩個平台的服務。
+
+雙平台規則只適用於非博弈遊戲。博弈相關產品不接 CrazyGames，不建立 CrazyGames Client、Build、廣告或上架素材；是否屬於博弈要看實際玩法與交易機制，不能只看 `games.type`。
 
 ## 回答方式
 
@@ -43,6 +58,9 @@
 - 不把 Flash 兄弟模組責任硬塞進 Looty。
 - 遊戲不要自己登入玩家，也不要直接改玩家餘額。
 - 在 Looty repo 任務中不要修改任何遊戲本體 repo；只有使用者明確指定某一款遊戲並切到該遊戲 repo 時，才處理遊戲本體接入。
+- 博弈相關產品不接 CrazyGames；不要替這類產品建立 CrazyGames Build、SDK、廣告或上架流程。
+- CrazyGames Build 不呼叫 Looty Gateway；Looty Build 不初始化 CrazyGames SDK 或載入 CrazyGames 廣告。
+- Looty launch code 與 gateway token 只留在記憶體，不寫入瀏覽器儲存、Log 或 Analytics。
 - Lobby 遊戲封面統一使用 `3:4`、`750 x 1000` WebP。
 - 遊戲商提供原圖後，由 Looty AI 裁切、壓縮並放到 `public/games/<slug>/cover.webp`。
 - Lobby 封面屬於 Looty 平台素材，不要放進或修改遊戲本體 repo。
@@ -122,3 +140,7 @@
 - 2026-07-11 已上架 `speed-rush`：`type = arcade`、`supports_live = false`、`published = true`、`launch_url = https://speed-rush.pages.dev/`；Lobby -> Loader -> iframe 已驗證通過，目前押注與賠付只是 H5 client 展示，沒有接 Looty wallet 或修改遊戲本體。
 - 2026-07-12 已上架 Looty 自管封面：`speed-rush`、`ocean-battle`、`color-guess`，並驗證正式 Lobby 正常顯示。
 - 2026-07-12 已加入手機橫向 Lobby 版面，觸控低高度橫向裝置改為 4 欄，PC 與手機直向不受影響。
+- 2026-07-18 `valkyrie-dragons-hoard`、`dead-county`、`ninja-four-elements`、`arrgh-hoops` 已完成上架或上架測試；詳細狀態以 `README.md` 為準。
+- 2026-07-23 已確認 Looty / `lsazydefvnuqglultqii` linked true，本機與遠端 16 筆 migrations 全部同步。
+- 2026-07-23 已建立 `docs/operations/ANALYTICS_MONITORING.md`，Analytics 與監控仍在規劃階段，尚未實作。
+- 2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild；`npm audit` 為 0 vulnerabilities，build 與 smoke 已通過。

@@ -6,16 +6,22 @@ Looty 是 Flash 系統裡的遊戲入口 / Lobby / 輕量 Admin 前端。
 
 ## 文件地圖
 
-1. `README.md`
-   - 目前 repo 實作、資料流、部署、DB 現況與限制。
-2. `GAME_PLATFORM_INTEGRATION.md`
-   - 給 Looty AI 與做遊戲的 AI 看，說明遊戲要怎麼接 Looty、哪些責任不能混在一起。
-3. `LOOTY_MVP.md`
-   - MVP 產品邊界、目前不做什麼、下一步。
-4. `FLASH.md`
-   - Flash 大系統背景，只看責任邊界，不當作 repo 細節真相。
-5. `KNOWN_ISSUES.md`
-   - 已確認的技術問題、風險、改善方向與處理狀態，只給 AI / Codex 讀。
+| 分類 | 文件 | 唯一責任 |
+| --- | --- | --- |
+| 核心 | `README.md` | 目前 repo 實作、資料流、部署與 DB 真相。 |
+| AI | `AGENTS.md` | AI / Codex 工作規則。 |
+| 產品 | `docs/product/PRODUCT_SCOPE.md` | 正式產品邊界、交付標準與下一步。 |
+| 平台 | `docs/platform/GAME_PLATFORM_INTEGRATION.md` | 遊戲接 Looty 的 Platform、Gateway、Wallet 契約與雙平台共用架構。 |
+| 平台 | `docs/platform/CRAZYGAMES_INTEGRATION.md` | CrazyGames Build、SDK、廣告、存檔與上架規範。 |
+| 平台 | `docs/platform/FLASH.md` | Flash 大系統背景與模組責任。 |
+| 營運 | `docs/operations/KNOWN_ISSUES.md` | 已確認問題、風險與處理狀態。 |
+| 營運 | `docs/operations/ANALYTICS_MONITORING.md` | Analytics、監控、KPI、告警與後續施工順序。 |
+
+目前共 8 份文件，每份只維護一種責任。新增內容時優先更新現有文件；除非出現新的獨立責任，否則不要再新增文件。
+
+這個 repo 的程式碼仍是 Looty 平台；`docs/platform` 另外保存遊戲發布到 Looty 與 CrazyGames 的串接規範。製作遊戲的 AI 要同時讀兩份平台文件，讓同一套遊戲本體可以用不同 Platform Client 發布到兩個平台。
+
+CrazyGames 串接只適用於非博弈遊戲。博弈相關產品只走 Looty 或另外核准的平台，不建立 CrazyGames Build。
 
 ## 專案定位
 
@@ -36,13 +42,13 @@ Looty 目前不負責：
 - 完整 ledger / settlement 系統。
 - 讓前端直接寫玩家或錢包資料。
 
-遊戲本體不應自己登入玩家，也不應直接改玩家餘額。細節看 `GAME_PLATFORM_INTEGRATION.md`。
+遊戲本體不應自己登入玩家，也不應直接改玩家餘額。細節看 `docs/platform/GAME_PLATFORM_INTEGRATION.md`。
 
 Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 Loader 收到 Looty session 參數；遊戲是否要讀取這些參數，必須等使用者明確指定該遊戲接入時，再到該遊戲 repo 處理。
 
 ## 目前狀態
 
-截至 2026-07-18：
+目前狀態：
 
 - 技術棧是 Vanilla JS + Vite，多頁靜態站。
 - Hosting 走 Cloudflare Pages，GitHub `main` 自動部署到 `looty-git`。
@@ -62,9 +68,10 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Loader 只把兩分鐘有效、只能使用一次的 `looty_launch_code` 傳給 iframe；遊戲以它交換最長一小時的 `gateway_token`。
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
 - Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
-- 2026-07-10 已確認 `npm run build` 與 `npm run smoke` 通過。
+- 2026-07-23 已更新前端與開發依賴，`npm audit`、`npm run build` 與 `npm run smoke` 通過。
 - Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess`、`valkyrie-dragons-hoard`、`dead-county`、`ninja-four-elements`、`arrgh-hoops` 已使用。
 - Lobby 已有手機橫向版面：觸控低高度橫向裝置顯示 4 欄，PC 與手機直向維持原版面。
+- Looty Analytics v1.0 已完成規劃，尚未建立 Grafana、Reporting Views、Gateway health 或 Analytics event。
 
 ## 目前工作方向
 
@@ -75,7 +82,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 1. 保持首頁 -> Game Loader -> 遊戲啟動的主路徑穩定。
 2. 用電腦版 Admin 管理遊戲上架資料。
 3. 讓文件清楚分出 Looty Platform、Game、Game Gateway、Wallet Interface 的責任。
-4. 讓遊戲接入 AI 依 `GAME_PLATFORM_INTEGRATION.md` 讀取 Looty session 參數。
+4. 讓遊戲接入 AI 依 `docs/platform/GAME_PLATFORM_INTEGRATION.md` 讀取 Looty session 參數。
 5. 不先做完整會員中心、不恢復前台登入 UI、不接 Supinova、不切正式網域。
 
 如果要改遊戲本體，必須是使用者明確指定某一款遊戲，並切到該遊戲 repo 後再做；Looty repo 不代替遊戲 repo 實作玩法、下注、派彩或 UI。
@@ -505,6 +512,7 @@ npm run build
 
 - 這是 Vite 多頁專案，請用 Vite dev server，不要直接開 HTML。
 - `vite.config.js` 的多頁 `input` 不能拿掉，否則 `/game` 與 `/admin` build 後會失效。
+- 專案使用 Node.js 22；Cloudflare Pages 與支援 `.node-version` 的本機工具會讀取根目錄版本設定。
 - `npm` 在 Windows PowerShell 可能被 execution policy 擋住；可改用 `npm.cmd`。
 
 ## Smoke Check
@@ -529,11 +537,12 @@ Smoke 目標：
 - 啟動 headless Chrome / Edge。
 - 驗首頁、Loader 缺 slug、Admin login、共用錯誤視窗。
 
-2026-07-10 已確認：
+2026-07-23 已確認：
 
+- `npm audit` 為 0 vulnerabilities。
 - `npm run build` 通過。
 - `npm run smoke` 通過。
-- Gateway v1 security smoke 通過。
+- Gateway v1 security smoke 最後於 2026-07-10 確認通過，本次沒有重跑，避免建立新的正式 Demo 測試資料。
 
 若要指定 browser，用 `SMOKE_BROWSER_PATH`。
 
@@ -633,9 +642,9 @@ Cloudflare 操作提醒：
 
 ## Cloudflare Access 選用加固
 
-目前 Admin 已有 Supabase Google OAuth + `admin_users` email 白名單保護，MVP 階段已足夠。
+目前 Admin 已有 Supabase Google OAuth + `admin_users` email 白名單保護，符合目前產品階段的應用層需求。
 
-Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。之後如果要再加一層入口保護，可以把 `/admin/*` 納入 Cloudflare Access，讓使用者進入 Admin HTML 前先通過 Cloudflare。
+Cloudflare Access 不是目前登入功能的前提，也不是目前交付的阻擋項目。之後如果要再加一層入口保護，可以把 `/admin/*` 納入 Cloudflare Access，讓使用者進入 Admin HTML 前先通過 Cloudflare。
 
 若要設定，預計：
 
@@ -665,5 +674,5 @@ Cloudflare Access 不是目前登入功能的前提，也不是 MVP blocker。�
 3. Loader 啟動失敗時，優先查 `public_games_v1` 是否查得到該 `slug`，再查 `looty-gateway/create-session`。
 4. 調整公開規則時，優先改 DB view / policy，不要加本地硬編碼。
 5. 改部署前，先保住目前可用的靜態輸出流程。
-6. 做遊戲接入前，先讀 `GAME_PLATFORM_INTEGRATION.md`。
+6. 做遊戲接入前，先讀 `docs/platform/GAME_PLATFORM_INTEGRATION.md`。
 7. 不要在 Looty repo 任務中直接修改遊戲本體 repo。
