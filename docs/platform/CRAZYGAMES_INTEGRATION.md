@@ -45,7 +45,7 @@ Shared Game
   -> Platform Client
     -> Looty Client
     -> CrazyGames Client
-    -> Demo Client
+    -> Local Client
 ```
 
 CrazyGames Client 負責：
@@ -66,6 +66,8 @@ CrazyGames Client 不負責：
 - Looty 錢包、下注、派彩、退款或 Round 結算。
 
 平台 Client 必須先完成 `init()`，遊戲才可執行平台存檔、廣告或其他平台操作。平台功能用 capabilities 表示；不支援的功能要安全停用，不可偷偷改用另一個平台的實作。
+
+Local Client 只供本機開發測試，不是第三個正式發布平台。CrazyGames Build 初始化失敗時要停用平台功能並顯示錯誤，不可自動降級成 Local Client。
 
 ## 發布方式
 

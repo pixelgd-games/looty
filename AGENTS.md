@@ -28,7 +28,7 @@
 1. `docs/platform/GAME_PLATFORM_INTEGRATION.md`
 2. `docs/platform/CRAZYGAMES_INTEGRATION.md`
 
-遊戲使用同一套本體，平台差異放在 Looty Client、CrazyGames Client、Demo Client。不要只靠 iframe 判斷平台，也不要讓任何 Build 同時呼叫兩個平台的服務。
+遊戲使用同一套本體，平台差異放在 Looty Client、CrazyGames Client、Local Client。Local Client 只供本機開發測試，不是正式發布平台，也不能在正式平台初始化失敗時自動啟用。不要只靠 iframe 判斷平台，也不要讓任何 Build 同時呼叫兩個平台的服務。
 
 雙平台規則只適用於非博弈遊戲。博弈相關產品不接 CrazyGames，不建立 CrazyGames Client、Build、廣告或上架素材；是否屬於博弈要看實際玩法與交易機制，不能只看 `games.type`。
 

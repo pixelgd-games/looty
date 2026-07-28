@@ -10,7 +10,7 @@
 
 - 讓 Looty AI 知道平台、遊戲、錢包、Gateway 的責任邊界。
 - 讓其他做遊戲的 AI 知道遊戲要怎麼接 Looty。
-- 讓同一款遊戲能用 Platform Client 隔離 Looty、CrazyGames 與 Demo。
+- 讓同一款遊戲能用 Platform Client 隔離 Looty、CrazyGames 與本機開發環境。
 - 避免遊戲自己登入玩家、自己建玩家、自己改錢包。
 
 這不是對外 API 文件，也不是完整錢包系統規格。
@@ -29,14 +29,14 @@ Looty 是平台入口與玩家平台層。
 
 是否屬於博弈產品要看實際玩法與交易機制，不能只用 `games.type` 判斷。以投注、下注、派彩、可兌價值錢包、賭場或類賭博機制為核心的產品，只走 Looty 或另外核准的平台。
 
-非博弈遊戲要同時支援 Looty、CrazyGames 與本機 Demo 時，使用同一套遊戲本體，再用平台介面隔離差異：
+非博弈遊戲要同時支援 Looty、CrazyGames 與本機開發測試時，使用同一套遊戲本體，再用平台介面隔離差異：
 
 ```text
 Shared Game
   -> Platform Client
     -> Looty Client
     -> CrazyGames Client
-    -> Demo Client
+    -> Local Client
 ```
 
 遊戲本體只呼叫共通介面，不在關卡、物理、UI 或音效程式裡直接判斷平台。
@@ -67,7 +67,7 @@ platform.wallet.closeRound()
 
 - Looty Client：Gateway、session、餘額、下注、派彩、退款與 Round。
 - CrazyGames Client：Gameplay 事件、Data 存檔、廣告、平台靜音與適用的 User / 多人功能。
-- Demo Client：本機存檔與開發測試；不連正式錢包、不載入正式廣告。
+- Local Client：本機存檔與開發測試；不連正式錢包、不載入正式廣告。
 
 固定規則：
 
@@ -77,9 +77,10 @@ platform.wallet.closeRound()
 - 平台以發布設定選定，runtime 偵測只做第二層驗證。
 - 不用「是否在 iframe」判斷平台，因為 Looty 與 CrazyGames 都可能使用 iframe。
 - 平台初始化完成前，不執行錢包、廣告或存檔操作。
+- Local Client 只能由明確的本機開發設定啟用；正式 Build 初始化失敗時要顯示錯誤，不可自動降級成 Local Client。
 - CrazyGames Build 不呼叫 Looty Gateway。
 - Looty Build 不初始化 CrazyGames SDK，也不載入 CrazyGames 廣告。
-- CrazyGames Data 與 Demo 本機存檔由平台層切換，不混在遊戲本體。
+- CrazyGames Data 與 Local Client 本機存檔由平台層切換，不混在遊戲本體。
 - 音訊優先順序是廣告暫停 / 平台強制靜音，再來才是玩家設定。
 
 Looty 一次性 launch code 要立即交換成 `gateway_token`。launch code 與 token 都只能留在記憶體，不可寫入 `localStorage`、`sessionStorage`、IndexedDB、Log 或 Analytics event；交換完成後應從遊戲網址移除敏感 query 參數。
