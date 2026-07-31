@@ -22,7 +22,7 @@
 
 ### Gateway 防濫用
 
-狀態：本機程式已處理，遠端 Gateway 待部署。
+狀態：已部署 Gateway v5，不建立玩家、錢包或 session 的 production security smoke 已通過。
 
 `create-session` 現在會拒絕缺少 `Origin` 或來源不在白名單的請求。
 
@@ -30,7 +30,7 @@
 
 ### Loader 與 Gateway 逾時
 
-狀態：本機程式已處理，待前端與 Gateway 部署。
+狀態：Gateway v5 已部署，Loader 前端待 Git push 自動部署。
 
 - Game Loader 等待 iframe `load` 最長 30 秒，逾時會移除 iframe 並顯示 `LOOTY-GAME-006`。
 - Gateway 的 Supabase Auth 逾時為 5 秒，REST RPC 逾時為 8 秒。
@@ -83,6 +83,8 @@ Guest 保存期限與清理規則尚未定案。資料量明顯增加前，需�
 - Gateway 其他 request validation 與錯誤轉換。
 
 Production Gateway security smoke 會建立正式 Demo 測試資料，不要在一般檢查中自動執行。
+
+設定 `GATEWAY_NON_MUTATING_SMOKE=1` 時只驗證 Origin、Demo 幣別與欄位上限，不建立玩家、錢包或 session；仍會經過既有 rate limit 計數。
 
 ## 維運限制
 

@@ -134,7 +134,7 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 會員、Guest、錢包初始化放在 DB RPC 或後端流程，不要讓前端直接寫玩家或錢包表。
 - 目前 5 張平台骨架表與 `gateway_rate_limits` 已開 RLS，沒有前端讀寫 policy，anon / authenticated table grants 已撤銷。
 - Game session / wallet RPC 已建立，目前只開給 `service_role`，不要從前端直接呼叫。
-- Supabase Edge Function `looty-gateway` v4 已部署，支援 `create-session`、一次性 launch code `exchange` 與第一版 wallet endpoints。
+- Supabase Edge Function `looty-gateway` v5 已部署，支援 `create-session`、一次性 launch code `exchange`、第一版 wallet endpoints、Origin / Demo 幣別限制與上游逾時。
 - Game Loader 進遊戲前會建立 session，並把 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url` 傳給 iframe。
 - 遊戲以兩分鐘有效、只能使用一次的 launch code 交換最長一小時的 `gateway_token`；Loader 不把 Supabase anon key、JWT 或 service role key 傳給 iframe。
 - Gateway v1 已自行驗證 route、token、scope、session 與 DB-backed rate limit；目前 wallet mode 是 `demo`，不代表正式金流。
@@ -164,4 +164,5 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 2026-07-23 已建立 `docs/operations/ANALYTICS_MONITORING.md`，Analytics 與監控仍在規劃階段，尚未實作。
 - 2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild；`npm audit` 為 0 vulnerabilities，build 與 smoke 已通過。
 - 2026-07-31 本機已完成 PostCSS 安全更新、Demo POINT 幣別限制、Gateway 逾時與錯誤加固、iframe sandbox / 載入逾時、Lobby 破圖 fallback 與後台表單路由修正；`npm audit`、build、smoke、Gateway unit check 與全專案語法檢查通過。
-- 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，`20260731171000_restrict_demo_wallet_currency.sql` 尚待使用者確認後套用。遠端 `looty-gateway` 仍是 v4，尚未部署本機加固版本。
+- 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，`20260731171000_restrict_demo_wallet_currency.sql` 尚待使用者確認後套用。
+- 2026-07-31 已部署 `looty-gateway` v5，`verify_jwt=false`；不建立玩家、錢包或 session 的 production security smoke 已通過。

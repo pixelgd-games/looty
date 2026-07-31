@@ -39,6 +39,11 @@ const oversizedDisplayName = await post("create-session", {
 }, lootyOrigin)
 assert.equal(oversizedDisplayName.status, 400, "create-session must reject an oversized display name")
 
+if (process.env.GATEWAY_NON_MUTATING_SMOKE === "1") {
+  console.log("Gateway non-mutating security smoke passed.")
+  process.exit(0)
+}
+
 if (anonKey) {
   const anonymousClient = await post("create-session", {
     slug: gameSlug,

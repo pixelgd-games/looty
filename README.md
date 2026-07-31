@@ -64,7 +64,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Repo 沒有本地 `enabled-games` 白名單，也沒有 `src/config/game-urls.js`。
 - 平台骨架 migration 已套用，新增 `player_accounts`、`wallet_accounts`、`wallet_transactions`、`game_sessions`、`game_rounds`。
 - 最小 game session / wallet RPC 已套用，目前只開給 `service_role`。
-- Supabase Edge Function `looty-gateway` v4 已部署，支援一次性 launch code、`exchange` 與第一版 wallet endpoints。
+- Supabase Edge Function `looty-gateway` v5 已部署，支援一次性 launch code、`exchange`、第一版 wallet endpoints、Origin / Demo 幣別限制與上游逾時。
 - Loader 只把兩分鐘有效、只能使用一次的 `looty_launch_code` 傳給 iframe；遊戲以它交換最長一小時的 `gateway_token`。
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
 - Wallet 目前明確是 `demo` mode，只接受 `POINT`；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
@@ -446,12 +446,13 @@ POST /functions/v1/looty-gateway/close-round
 - `gateway_token` 目前只代表 `demo` wallet；正式金流仍需要可信任遊戲後端或外部 wallet adapter。
 - 新建立的 Demo POINT 錢包會取得 10,000 POINT，並寫入一筆 `deposit` 流水；營運前可用另一個小步 migration 關閉並清理測試資料。
 
-2026-07-31 本機已完成、遠端尚未部署：
+2026-07-31 已部署 `looty-gateway` v5：
 
 - `create-session` 缺少 `Origin` 時回 `403`。
 - Demo wallet 只接受 `POINT`，其他幣別回 `400`。
 - Supabase Auth 與 RPC 分別使用 5 秒、8 秒逾時。
 - Request body 以串流限制 16 KiB，非預期 DB 訊息不直接回傳。
+- 不建立玩家、錢包或 session 的 production security smoke 已通過。
 
 ## 環境變數
 
@@ -545,6 +546,14 @@ npm.cmd run smoke:gateway
 ```
 
 安全 smoke 會建立標記為 `gateway-security-smoke` 的 demo session / round / transaction 測試資料，不要在未確認 Looty 專案時執行。
+
+只驗證拒絕規則、不建立玩家、錢包或 session：
+
+```powershell
+$env:ALLOW_PRODUCTION_GATEWAY_SMOKE='1'
+$env:GATEWAY_NON_MUTATING_SMOKE='1'
+npm.cmd run smoke:gateway
+```
 
 Smoke 目標：
 

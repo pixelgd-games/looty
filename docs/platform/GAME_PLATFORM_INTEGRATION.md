@@ -142,7 +142,7 @@ Lobby
 
 目前已套用 DB 平台骨架，並已建立 game session / wallet RPC。
 這些 RPC 只開給 `service_role`，前端與遊戲不能直接呼叫。
-Supabase Edge Function `looty-gateway` v4 已部署，負責建立 session、交換短效 token、rate limit 與轉接 wallet 操作。
+Supabase Edge Function `looty-gateway` v5 已部署，負責建立 session、交換短效 token、rate limit、上游逾時與轉接 wallet 操作。
 
 所以現階段遊戲接 Looty，先做到：
 
@@ -436,7 +436,7 @@ Game
 - Loader 只傳 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url`。
 - Launch code 兩分鐘到期且只能交換一次；`gateway_token` 最長一小時並綁定 game session 與 action scopes。
 - Loader 不把 Supabase anon key、JWT、Authorization header 或任何 service role key 傳給遊戲。
-- `looty-gateway` v4 的 `verify_jwt = false`，由 Gateway 自己驗證 route、origin、launch code、gateway token、scope、session 與 rate limit。
+- `looty-gateway` v5 的 `verify_jwt = false`，由 Gateway 自己驗證 route、origin、launch code、gateway token、scope、session 與 rate limit。
 - 遊戲 AI 不要自己發明其他授權方式，也不要去抓 Looty bundle 裡的 env key。
 
 ## Session payload 建議
@@ -859,9 +859,9 @@ Looty Platform
 
 已部署 Edge Function：
 
-- `looty-gateway` v4，`verify_jwt=false`，由 Gateway 自行驗證。
+- `looty-gateway` v5，`verify_jwt=false`，由 Gateway 自行驗證。
 
-本機已完成 Gateway 加固版本，遠端仍是 v4，待幣別 migration 確認後一併部署。
+2026-07-31 不建立玩家、錢包或 session 的 production security smoke 已通過。DB 幣別 migration 仍待使用者確認。
 
 注意：
 
