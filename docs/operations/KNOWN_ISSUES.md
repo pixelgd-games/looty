@@ -15,7 +15,7 @@
 - 現有正式產品架構可繼續使用，不需要重做。
 - Lobby、Game Loader、Admin、Gateway 與 DB 的責任分工大致正確。
 - 2026-07-31 `npm audit`、`npm run build`、`npm run smoke`、`npm run test:gateway`、全專案 JavaScript 語法與 Gateway TypeScript 解析已通過。
-- 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，新幣別 migration 尚待使用者確認。
+- 2026-07-31 已確認 Looty linked true；使用者決定暫緩 DB 層 Demo wallet 幣別 migration，未套用檔案已從 active migrations 移除，本機與遠端 16 筆 migrations 同步。
 - 以下問題目前不阻擋公開遊戲啟動主路徑。
 
 ## 優先處理
@@ -121,9 +121,9 @@ Production Gateway security smoke 會建立正式 Demo 測試資料，不要在�
 
 ### Demo wallet 幣別
 
-本機 Gateway 已限制 Demo wallet 只接受 `POINT`。小步 migration `20260731171000_restrict_demo_wallet_currency.sql` 會把新 wallet 預設餘額改為 0，只在建立 POINT wallet 時由 DB trigger 發放 10,000 POINT，並限制 Demo session 幣別必須是 POINT。
+Gateway v5 已限制 Demo wallet 只接受 `POINT`。
 
-此 migration 尚待使用者確認，遠端尚未套用。
+使用者決定暫緩 DB 層的幣別 constraint / trigger，正式營運前再處理。未套用的 migration 已從 active migrations 移除，避免未來執行其他 `db push` 時被順便套用。暫緩期間保留新 Demo POINT 錢包 10,000 POINT 的測試餘額。
 
 ### Gateway 錯誤與 body limit
 

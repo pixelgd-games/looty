@@ -333,10 +333,6 @@ ORDER BY sort_order, created_at DESC;
 - `20260710143000_add_gateway_runtime_limits.sql`
 - `20260710210000_grant_demo_wallet_initial_credit.sql`
 
-本機已建立、遠端尚待使用者確認：
-
-- `20260731171000_restrict_demo_wallet_currency.sql`
-
 目前 public schema 包含：
 
 - `admin_users`
@@ -446,6 +442,8 @@ POST /functions/v1/looty-gateway/close-round
 - Loader 不把 Supabase anon key、JWT、Authorization header 或 service role key 傳給 iframe。
 - `gateway_token` 目前只代表 `demo` wallet；正式金流仍需要可信任遊戲後端或外部 wallet adapter。
 - 新建立的 Demo POINT 錢包會取得 10,000 POINT，並寫入一筆 `deposit` 流水；營運前可用另一個小步 migration 關閉並清理測試資料。
+- 2026-07-31 使用者決定暫緩 DB 層的 Demo wallet 幣別 constraint / trigger；未套用的 migration 已從 active migrations 移除，避免未來 `db push` 誤套用。
+- 暫緩期間 Gateway 仍只接受 `POINT`，新 Demo POINT 錢包仍保留 10,000 POINT 供測試。
 
 2026-07-31 已部署 `looty-gateway` v5：
 

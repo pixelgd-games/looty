@@ -853,15 +853,13 @@ Looty Platform
 - `20260710143000_add_gateway_runtime_limits.sql`
 - `20260710210000_grant_demo_wallet_initial_credit.sql`
 
-本機已建立、遠端尚待使用者確認：
-
-- `20260731171000_restrict_demo_wallet_currency.sql`
-
 已部署 Edge Function：
 
 - `looty-gateway` v5，`verify_jwt=false`，由 Gateway 自行驗證。
 
-2026-07-31 不建立玩家、錢包或 session 的 production security smoke 已通過。DB 幣別 migration 仍待使用者確認。
+2026-07-31 不建立玩家、錢包或 session 的 production security smoke 已通過。
+
+使用者決定暫緩 DB 層 Demo wallet 幣別 constraint / trigger，正式營運前再處理。未套用的 migration 已從 active migrations 移除；暫緩期間 Gateway 仍只接受 `POINT`，新 Demo POINT 錢包保留 10,000 POINT。
 
 注意：
 

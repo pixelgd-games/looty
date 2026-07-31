@@ -139,6 +139,8 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 遊戲以兩分鐘有效、只能使用一次的 launch code 交換最長一小時的 `gateway_token`；Loader 不把 Supabase anon key、JWT 或 service role key 傳給 iframe。
 - Gateway v1 已自行驗證 route、token、scope、session 與 DB-backed rate limit；目前 wallet mode 是 `demo`，不代表正式金流。
 - Demo wallet 幣別只允許 `POINT`；其他幣別不得建立 Demo session 或取得初始點數。
+- DB 層的 Demo wallet 幣別 constraint / trigger migration 已由使用者決定暫緩，正式營運前再處理；不要自行重建或套用。
+- 暫緩期間保留新 Demo POINT 錢包 10,000 POINT 的測試餘額。
 - Round 與 wallet transaction 已綁定 `game_session_id`，相同 `round_id` 可安全存在於不同 session。
 - 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 
@@ -164,6 +166,6 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 2026-07-23 已建立 `docs/operations/ANALYTICS_MONITORING.md`，Analytics 與監控仍在規劃階段，尚未實作。
 - 2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild；`npm audit` 為 0 vulnerabilities，build 與 smoke 已通過。
 - 2026-07-31 本機已完成 PostCSS 安全更新、Demo POINT 幣別限制、Gateway 逾時與錯誤加固、iframe sandbox / 載入逾時、Lobby 破圖 fallback 與後台表單路由修正；`npm audit`、build、smoke、Gateway unit check 與全專案語法檢查通過。
-- 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，`20260731171000_restrict_demo_wallet_currency.sql` 尚待使用者確認後套用。
+- 2026-07-31 使用者決定暫緩 DB 層 Demo wallet 幣別 migration，保留新 Demo POINT 錢包 10,000 POINT；未套用的 migration 檔已從 active migrations 移除，本機與遠端 16 筆 migrations 同步。
 - 2026-07-31 已部署 `looty-gateway` v5，`verify_jwt=false`；不建立玩家、錢包或 session 的 production security smoke 已通過。
 - 2026-07-31 已用 SSH 推送 `main`，Cloudflare Pages 正式站已切到新 build；Lobby、Loader 缺 slug 錯誤與正式資產中的 iframe 保護、載入逾時錯誤碼、封面 fallback 已驗證。
