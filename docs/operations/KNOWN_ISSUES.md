@@ -16,7 +16,7 @@
 - Lobby、Game Loader、Admin、Gateway 與 DB 的責任分工大致正確。
 - 2026-07-23 `npm audit`、`npm run build` 與 `npm run smoke` 已通過；遠端 Supabase DB lint 先前已通過。
 - 2026-07-23 已確認 Looty linked true，本機與遠端 16 筆 migrations 全部同步。
-- 以下問題目前不阻擋公開 Demo 主路徑。
+- 以下問題目前不阻擋公開遊戲啟動主路徑。
 
 ## 優先處理
 

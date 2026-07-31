@@ -32,6 +32,11 @@
 
 雙平台規則只適用於非博弈遊戲。博弈相關產品不接 CrazyGames，不建立 CrazyGames Client、Build、廣告或上架素材；是否屬於博弈要看實際玩法與交易機制，不能只看 `games.type`。
 
+`D:\Studio\Project-Gaming` 內的產品一律按博弈產品處理，不建立
+CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確把
+某款產品移出該工作區並重新分類，否則 Looty 的 `games.type` 不得
+改變這項邊界。
+
 ## 回答方式
 
 - 用一般人聽得懂的話回答。

@@ -609,7 +609,8 @@ Smoke 目標：
 - `launch_url` 為 `https://valkyrie-dragons-hoard.pages.dev/`。
 - 封面已使用 Looty 自管 `/games/valkyrie-dragons-hoard/cover.webp`，規格為 `750 x 1000` WebP。
 - 正式 Lobby 可顯示 Valkyrie: Dragon's Hoard，Loader 可建立 session 並載入 iframe。
-- Valkyrie: Dragon's Hoard 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
+- Valkyrie: Dragon's Hoard 是正式開發產品，目前不接 Looty Wallet；
+  遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
 
 2026-07-14 Dead County 上架確認：
 
@@ -617,7 +618,8 @@ Smoke 目標：
 - `launch_url` 為 `https://dead-county.pages.dev/`。
 - 封面已使用 Looty 自管 `/games/dead-county/cover.webp`，規格為 `750 x 1000` WebP。
 - 正式 Lobby 可顯示 Dead County，Loader 可建立 session 並載入 iframe。
-- Dead County 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
+- Dead County 是正式開發產品，目前不接 Looty Wallet；遊戲本體可忽略
+  Looty session query params，沒有修改遊戲 repo。
 
 2026-07-16 Ninja: Four Elements 上架確認：
 
@@ -625,7 +627,8 @@ Smoke 目標：
 - `launch_url` 為 `https://ninja-four-elements.pages.dev/`。
 - 封面已使用 Looty 自管 `/games/ninja-four-elements/cover.webp`，規格為 `750 x 1000` WebP。
 - 正式 Lobby 可顯示 Ninja: Four Elements，Loader 可建立 session 並載入 iframe。
-- Ninja: Four Elements 目前維持 Demo 模式，不接 Looty Wallet，遊戲本體可忽略 Looty session query params，沒有修改遊戲 repo。
+- Ninja: Four Elements 是正式開發產品，目前不接 Looty Wallet；遊戲本體
+  可忽略 Looty session query params，沒有修改遊戲 repo。
 
 2026-07-18 Arrgh! Hoops 上架測試確認：
 

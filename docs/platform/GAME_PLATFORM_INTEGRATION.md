@@ -29,6 +29,10 @@ Looty 是平台入口與玩家平台層。
 
 是否屬於博弈產品要看實際玩法與交易機制，不能只用 `games.type` 判斷。以投注、下注、派彩、可兌價值錢包、賭場或類賭博機制為核心的產品，只走 Looty 或另外核准的平台。
 
+`D:\Studio\Project-Gaming` 內的產品一律按博弈產品處理。除非使用者
+明確將某款產品移出該工作區並重新分類，否則不要為它建立
+CrazyGames Client、Build、SDK、廣告或上架素材。
+
 非博弈遊戲要同時支援 Looty、CrazyGames 與本機開發測試時，使用同一套遊戲本體，再用平台介面隔離差異：
 
 ```text
@@ -110,7 +114,8 @@ Looty 一次性 launch code 要立即交換成 `gateway_token`。launch code 與
 - `color-guess`
 - `dead-county`
 - `lord-of-gomoku`
-- `monster-lab-dev`
+- `monster-lab-dev`（現有遠端舊紀錄；Project-Gaming 的正式
+  canonical slug 是 `monster-lab`）
 - `ninja-four-elements`
 - `ocean-battle`
 - `speed-rush`
@@ -377,7 +382,8 @@ looty_exchange_url
 遊戲 AI 接入時，建議先做最低限度支援：
 
 1. 從 URL 讀取 `looty_launch_code` 與 `looty_exchange_url`。
-2. 若缺少這兩個值，維持原本 demo / free-play 流程。
+2. 若完全缺少 Looty 參數，維持產品明確定義的 standalone
+   測試／獨立展示流程；若只收到部分參數則必須失敗關閉。
 3. 對 `looty_exchange_url` POST `{ "launch_code": "..." }`。
 4. 將回傳的 `gateway_token` 只保存在執行中的記憶體狀態。
 5. Wallet requests 使用 `gateway_token`，不要使用 Supabase anon key、JWT 或 Authorization header。
