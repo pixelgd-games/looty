@@ -43,6 +43,7 @@ try {
   }, "Home loads")
 
   await expectGameIframeSecurity(client)
+  await expectLobbyThumbnailFallback(client)
 
   await expectPageText(client, appPort, "/game/", (text) => {
     return text.includes("LOOTY-GAME-001")
@@ -358,6 +359,44 @@ async function expectGameIframeSecurity(client) {
   }
 
   console.log("OK Game iframe security attributes")
+}
+
+async function expectLobbyThumbnailFallback(client) {
+  const evaluation = await client.send("Runtime.evaluate", {
+    awaitPromise: true,
+    returnByValue: true,
+    expression: `
+      import("/src/pages/lobby/game-grid.js").then(({ renderGameGrid }) => {
+        const root = document.createElement("div")
+        renderGameGrid(root, [{
+          name: "Broken Cover",
+          slug: "broken-cover",
+          thumbnail: "https://invalid.example/cover.webp",
+          type: "arcade",
+        }])
+
+        const image = root.querySelector("img")
+        image.dispatchEvent(new Event("error"))
+        const poster = root.querySelector(".game-tile-poster")
+
+        return {
+          hasImage: Boolean(root.querySelector("img")),
+          hasFallback: poster?.classList.contains("is-empty") || false,
+        }
+      })
+    `,
+  })
+
+  if (evaluation.exceptionDetails) {
+    throw new Error(`Lobby thumbnail fallback check failed: ${evaluation.exceptionDetails.text}`)
+  }
+
+  const result = evaluation.result.value || {}
+  if (result.hasImage || !result.hasFallback) {
+    throw new Error(`Lobby thumbnail fallback check failed: ${JSON.stringify(result)}`)
+  }
+
+  console.log("OK Lobby thumbnail fallback")
 }
 
 async function waitForText(client, predicate, label) {

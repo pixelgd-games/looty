@@ -64,7 +64,7 @@ function createGameTile(game) {
   const gameUrl = getGameUrl(game)
   card.append(
     createTilePoster(game, gameUrl),
-    createTileBody(game, gameUrl),
+    createTileBody(game),
   )
 
   return card
@@ -80,10 +80,14 @@ function createTilePoster(game, gameUrl) {
   if (shouldShowThumbnail(game)) {
     const image = document.createElement("img")
     image.className = "game-tile-poster-image"
-    image.src = game.thumbnail
     image.alt = ""
     image.loading = "lazy"
     image.decoding = "async"
+    image.addEventListener("error", () => {
+      image.remove()
+      poster.classList.add("is-empty")
+    }, { once: true })
+    image.src = game.thumbnail
     poster.append(image)
   } else {
     poster.classList.add("is-empty")
@@ -92,7 +96,7 @@ function createTilePoster(game, gameUrl) {
   return poster
 }
 
-function createTileBody(game, gameUrl) {
+function createTileBody(game) {
   const displayName = getDisplayName(game)
   const body = document.createElement("div")
   body.className = "game-tile-body"

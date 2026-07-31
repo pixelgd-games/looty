@@ -1,4 +1,3 @@
-// src/admin/game-form.js
 import { supabase } from "../lib/supabaseClient.js";
 import { normalizeLaunchUrl } from "../lib/urls.js";
 import { ERROR_CODES, showErrorModal } from "../ui/error-modal.js";
@@ -6,9 +5,9 @@ import { requireAdmin } from "./auth.js";
 
 const form = document.getElementById("gameForm");
 const params = new URLSearchParams(window.location.search);
-const gameId = params.get("id");
+const isEditPage = window.location.pathname.startsWith("/admin/games/edit/");
+const gameId = isEditPage ? params.get("id") : null;
 
-// --- helpers ---
 function slugSanity(slug) {
   const s = String(slug || "").trim();
   if (!s) return { ok: false, msg: "slug 不能為空" };
@@ -111,7 +110,6 @@ async function submitForm(e) {
     return showValidationError("已上架遊戲需要 launch url");
   }
 
-  // 防止連點
   const submitBtn = form.querySelector('button[type="submit"]');
   if (submitBtn) submitBtn.disabled = true;
 
@@ -130,7 +128,6 @@ async function submitForm(e) {
       }
     }
 
-    // ✅ 導回正確的後台首頁（資料夾 index）
     window.location.href = "/admin/games/";
   } finally {
     if (submitBtn) submitBtn.disabled = false;
@@ -140,6 +137,21 @@ async function submitForm(e) {
 async function initFormPage() {
   const ok = await requireAdmin();
   if (!ok) return;
+
+  if (isEditPage && !gameId) {
+    showFormError({
+      code: ERROR_CODES.ADMIN_GAME_ID_MISSING,
+      title: "缺少遊戲編號",
+      message: "這個編輯網址不完整，請回遊戲列表重新選擇。",
+      primaryAction: {
+        label: "回遊戲列表",
+        onClick: () => {
+          window.location.href = "/admin/games/";
+        },
+      },
+    });
+    return;
+  }
 
   if (gameId) {
     await loadGame();
