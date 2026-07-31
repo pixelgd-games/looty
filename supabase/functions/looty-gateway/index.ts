@@ -82,6 +82,7 @@ type RateLimitConfig = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+const DEMO_CURRENCY = "POINT"
 const MAX_BODY_BYTES = 16 * 1024
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://looty-git.pages.dev",
@@ -224,6 +225,10 @@ async function createSession(request: Request, headers: HeadersInit): Promise<Re
 
   if (!/^[A-Z0-9_]{1,16}$/.test(currency)) {
     return jsonResponse({ error: "Invalid currency" }, 400, headers)
+  }
+
+  if (currency !== DEMO_CURRENCY) {
+    return jsonResponse({ error: "Demo wallet only supports POINT" }, 400, headers)
   }
 
   if (expiresInSeconds < 60 || expiresInSeconds > 86400) {

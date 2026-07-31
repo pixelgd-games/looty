@@ -20,6 +20,12 @@ const blocked = await post("create-session", {
 }, "https://not-looty.example")
 assert.equal(blocked.status, 403, "create-session must reject an unapproved origin")
 
+const unsupportedCurrency = await post("create-session", {
+  slug: gameSlug,
+  currency: "USD",
+}, lootyOrigin)
+assert.equal(unsupportedCurrency.status, 400, "demo wallet must reject unsupported currency")
+
 if (anonKey) {
   const anonymousClient = await post("create-session", {
     slug: gameSlug,
