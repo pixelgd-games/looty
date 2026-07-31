@@ -72,6 +72,7 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess`、`valkyrie-dragons-hoard`、`dead-county`、`ninja-four-elements`、`arrgh-hoops` 已使用。
 - Lobby 已有手機橫向版面：觸控低高度橫向裝置顯示 4 欄，PC 與手機直向維持原版面。
 - Looty Analytics v1.0 已完成規劃，尚未建立 Grafana、Reporting Views、Gateway health 或 Analytics event。
+- 2026-07-31 Cloudflare Pages 正式站已部署 iframe 保護、載入逾時、Lobby 封面 fallback 與 Admin 路由修正；Lobby 與 Loader 錯誤路徑已驗證。
 
 ## 目前工作方向
 
@@ -611,6 +612,14 @@ Smoke 目標：
 - `color-guess` Loader 可建立新 session 並載入 iframe。
 - Iframe URL 有 `looty_launch_code`、`looty_exchange_url`、`looty_wallet_mode=demo`，沒有舊 `looty_launch_token`。
 - Gateway security smoke 已驗證 body limit、rate limit、一次性 code、token、idempotency 與跨 session round 隔離。
+
+2026-07-31 production 驗證：
+
+- GitHub `main` 與本機 commit 一致，Cloudflare Pages 已切到本次 build。
+- 正式 Lobby 可讀取並顯示公開遊戲。
+- Loader 缺少 slug 時顯示 `LOOTY-GAME-001`。
+- 正式資產包含 iframe sandbox、權限、referrer policy、`LOOTY-GAME-006` 與 Lobby 封面 fallback。
+- `looty-gateway` v5 已 Active；不建立玩家、錢包或 session 的 security smoke 已通過。
 
 2026-07-11 Ocean Battle 上架確認：
 

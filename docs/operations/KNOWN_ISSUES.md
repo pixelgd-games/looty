@@ -30,7 +30,7 @@
 
 ### Loader 與 Gateway 逾時
 
-狀態：Gateway v5 已部署，Loader 前端待 Git push 自動部署。
+狀態：Gateway v5 與 Loader 前端已部署，正式 Lobby、Loader 錯誤路徑與資產已驗證。
 
 - Game Loader 等待 iframe `load` 最長 30 秒，逾時會移除 iframe 並顯示 `LOOTY-GAME-006`。
 - Gateway 的 Supabase Auth 逾時為 5 秒，REST RPC 逾時為 8 秒。
@@ -38,7 +38,7 @@
 
 ### iframe 信任邊界
 
-狀態：本機程式已處理，待前端部署。
+狀態：已部署，正式資產與本機 smoke 已驗證。
 
 Game Loader 現在統一設定 `sandbox`、`allow`、`referrerPolicy=no-referrer` 與全螢幕權限，不開 modal、popup、下載或 top navigation。
 
