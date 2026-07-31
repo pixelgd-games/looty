@@ -70,6 +70,17 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 遊戲商提供原圖後，由 Looty AI 裁切、壓縮並放到 `public/games/<slug>/cover.webp`。
 - Lobby 封面屬於 Looty 平台素材，不要放進或修改遊戲本體 repo。
 
+## Git / GitHub 規則
+
+- Looty GitHub repo 是 `pixelgd-games/looty`。
+- 本機 `origin` 使用 SSH 分流：`git@github-pixelgd:pixelgd-games/looty.git`。
+- 一般 commit / push 優先沿用現有 SSH remote，不要因為缺少 GitHub CLI `gh` 就停止。
+- 推送前可用 `ssh -T git@github-pixelgd` 驗證；必須看到 `pixelgd-games` 帳號，看到其他帳號就停止。
+- 使用者要求把現有變更上 Git 時，先確認變更範圍、執行相關檢查，再用 SSH 推送。
+- 只有使用者明確要求建立或管理 Pull Request、Issue 時，才把 `gh` 當必要工具。
+- `main` 是 Cloudflare Pages production branch；推送到 `main` 會觸發正式站自動部署。
+- 不要覆蓋或丟棄使用者既有變更；提交後確認本機與遠端 commit 一致，並確認工作區乾淨。
+
 ## Supabase 規則
 
 - Looty Supabase project ref 是 `lsazydefvnuqglultqii`。
