@@ -42,6 +42,8 @@ try {
       && !normalizedText.includes("game list failed to load")
   }, "Home loads")
 
+  await expectGameIframeSecurity(client)
+
   await expectPageText(client, appPort, "/game/", (text) => {
     return text.includes("LOOTY-GAME-001")
   }, "Loader missing slug shows error")
@@ -283,6 +285,79 @@ async function showSyntheticError(client) {
       })
     `,
   })
+}
+
+async function expectGameIframeSecurity(client) {
+  const evaluation = await client.send("Runtime.evaluate", {
+    awaitPromise: true,
+    returnByValue: true,
+    expression: `
+      Promise.all([
+        import("/src/pages/game/iframe.js"),
+        import("/src/ui/error-modal.js"),
+      ]).then(async ([{ createGameIframe, mountGameFrame }, { ERROR_CODES }]) => {
+        const external = createGameIframe({
+          gameUrl: "https://game.example/",
+          gameName: "External Game",
+        })
+        const sameOrigin = createGameIframe({
+          gameUrl: "/game/local/",
+          gameName: "Local Game",
+        })
+        const timeoutTriggered = await new Promise((resolve) => {
+          mountGameFrame({
+            gameRoot: { append() {} },
+            gameUrl: "https://game.example/",
+            gameName: "Timeout Game",
+            timeoutMs: 10,
+            onLoad: () => resolve(false),
+            onTimeout: () => resolve(true),
+          })
+        })
+
+        return {
+          externalSandbox: external.getAttribute("sandbox"),
+          sameOriginSandbox: sameOrigin.getAttribute("sandbox"),
+          permissions: external.getAttribute("allow"),
+          referrerPolicy: external.referrerPolicy,
+          allowFullscreen: external.hasAttribute("allowfullscreen"),
+          timeoutTriggered,
+          timeoutCode: ERROR_CODES.GAME_LOAD_TIMEOUT,
+        }
+      })
+    `,
+  })
+
+  if (evaluation.exceptionDetails) {
+    throw new Error(`Game iframe security check failed: ${evaluation.exceptionDetails.text}`)
+  }
+
+  const result = evaluation.result.value || {}
+  const externalTokens = new Set(String(result.externalSandbox || "").split(/\s+/).filter(Boolean))
+  const sameOriginTokens = new Set(String(result.sameOriginSandbox || "").split(/\s+/).filter(Boolean))
+  const requiredTokens = [
+    "allow-forms",
+    "allow-orientation-lock",
+    "allow-pointer-lock",
+    "allow-scripts",
+  ]
+
+  if (
+    !requiredTokens.every((token) => externalTokens.has(token) && sameOriginTokens.has(token))
+    || externalTokens.has("allow-modals")
+    || sameOriginTokens.has("allow-modals")
+    || !externalTokens.has("allow-same-origin")
+    || sameOriginTokens.has("allow-same-origin")
+    || result.permissions !== "autoplay; fullscreen; gamepad"
+    || result.referrerPolicy !== "no-referrer"
+    || result.allowFullscreen !== true
+    || result.timeoutTriggered !== true
+    || result.timeoutCode !== "LOOTY-GAME-006"
+  ) {
+    throw new Error(`Game iframe security check failed: ${JSON.stringify(result)}`)
+  }
+
+  console.log("OK Game iframe security attributes")
 }
 
 async function waitForText(client, predicate, label) {

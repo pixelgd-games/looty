@@ -1,9 +1,11 @@
 import { supabase, supabaseFunctionsUrl } from "/src/lib/supabaseClient.js"
 import { appendQueryParams, normalizeLaunchUrl } from "/src/lib/urls.js"
 import { ERROR_CODES, showErrorModal } from "/src/ui/error-modal.js"
+import { mountGameFrame } from "./iframe.js"
 
 const params = new URLSearchParams(location.search)
 const slug = params.get("slug")
+const GAME_LOAD_TIMEOUT_MS = 30000
 
 function primeParentScroll() {
   if (window.scrollY > 0) return
@@ -146,12 +148,20 @@ function mountGameIframe(gameUrl, gameName) {
   const gameRoot = document.getElementById("game")
   if (!gameRoot) return
 
-  const iframe = document.createElement("iframe")
-  iframe.src = gameUrl
-  iframe.title = gameName || "Looty Game"
-  iframe.onload = hideLoading
-
-  gameRoot.append(iframe)
+  mountGameFrame({
+    gameRoot,
+    gameUrl,
+    gameName,
+    timeoutMs: GAME_LOAD_TIMEOUT_MS,
+    onLoad: hideLoading,
+    onTimeout: () => {
+      showError({
+        code: ERROR_CODES.GAME_LOAD_TIMEOUT,
+        title: "遊戲載入逾時",
+        message: "遊戲在預定時間內沒有完成載入，請稍後再試。",
+      })
+    },
+  })
 }
 
 function hideLoading() {
