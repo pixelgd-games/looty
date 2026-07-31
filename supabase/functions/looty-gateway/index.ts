@@ -72,7 +72,7 @@ type BodyResult =
 
 type AuthResult =
   | { ok: true; userId: string | null }
-  | { ok: false; error: string }
+  | { ok: false; error: string; status: number }
 
 type RateLimitConfig = {
   limit: number
@@ -84,6 +84,9 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
 const DEMO_CURRENCY = "POINT"
 const MAX_BODY_BYTES = 16 * 1024
+const AUTH_REQUEST_TIMEOUT_MS = 5000
+const RPC_REQUEST_TIMEOUT_MS = 8000
+const UPSTREAM_UNAVAILABLE_CODE = "LOOTY_UPSTREAM_UNAVAILABLE"
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://looty-git.pages.dev",
   "http://localhost:5173",
@@ -109,6 +112,26 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   refund: { limit: 120, windowSeconds: 60 },
   "close-round": { limit: 120, windowSeconds: 60 },
 }
+const PUBLIC_RPC_MESSAGES = new Set([
+  "amount must be greater than zero",
+  "expires_in_seconds must be between 60 and 86400",
+  "game is not available",
+  "game round is already closed",
+  "game round was not found",
+  "game session is not active",
+  "game slug is required",
+  "gateway token expiry must be between 300 and 86400",
+  "idempotency_key conflicts with another transaction",
+  "idempotency_key is required",
+  "insufficient wallet balance",
+  "launch code is invalid or expired",
+  "launch_code is required",
+  "metadata must be a json object",
+  "player account is not active",
+  "round_id is required",
+  "unsupported wallet transaction type",
+  "wallet account is not active",
+])
 
 const allowedOrigins = (Deno.env.get("LOOTY_ALLOWED_ORIGINS") ?? "")
   .split(",")
@@ -205,7 +228,7 @@ async function createSession(request: Request, headers: HeadersInit): Promise<Re
   const auth = await resolveAuthUser(request)
 
   if (!auth.ok) {
-    return jsonResponse({ error: auth.error }, 401, headers)
+    return jsonResponse({ error: auth.error }, auth.status, headers)
   }
 
   const body = await readJsonBody(request)
@@ -471,7 +494,7 @@ async function resolveAuthUser(request: Request): Promise<AuthResult> {
   const match = authorization.match(/^Bearer\s+(.+)$/i)
 
   if (!match) {
-    return { ok: false, error: "Invalid authorization header" }
+    return { ok: false, error: "Invalid authorization header", status: 401 }
   }
 
   const token = match[1].trim()
@@ -481,18 +504,25 @@ async function resolveAuthUser(request: Request): Promise<AuthResult> {
   }
 
   if (!SUPABASE_URL || !ANON_KEY) {
-    return { ok: false, error: "Gateway authentication is not configured" }
+    return { ok: false, error: "Gateway authentication is not configured", status: 500 }
   }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      apikey: ANON_KEY,
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  let response: Response
+
+  try {
+    response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+      signal: AbortSignal.timeout(AUTH_REQUEST_TIMEOUT_MS),
+    })
+  } catch {
+    return { ok: false, error: "Gateway authentication is unavailable", status: 503 }
+  }
 
   if (!response.ok) {
-    return { ok: false, error: "User session is not valid" }
+    return { ok: false, error: "User session is not valid", status: 401 }
   }
 
   const user = await readResponseJson(response)
@@ -501,7 +531,7 @@ async function resolveAuthUser(request: Request): Promise<AuthResult> {
     : ""
 
   if (!userId) {
-    return { ok: false, error: "User session is not valid" }
+    return { ok: false, error: "User session is not valid", status: 401 }
   }
 
   return { ok: true, userId }
@@ -547,15 +577,28 @@ async function callRpc(name: string, args: Record<string, unknown>): Promise<Rpc
     }
   }
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
-    method: "POST",
-    headers: {
-      apikey: SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-  })
+  let response: Response
+
+  try {
+    response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(args),
+      signal: AbortSignal.timeout(RPC_REQUEST_TIMEOUT_MS),
+    })
+  } catch {
+    return {
+      ok: false,
+      body: {
+        code: UPSTREAM_UNAVAILABLE_CODE,
+        message: "Gateway upstream request failed",
+      },
+    }
+  }
 
   return {
     ok: response.ok,
@@ -597,7 +640,7 @@ function buildCorsHeaders(
 
 function isCorsOriginAllowed(origin: string | null, route: string): boolean {
   if (!origin) {
-    return true
+    return route !== "create-session"
   }
 
   if (route === "create-session") {
@@ -631,12 +674,47 @@ function jsonResponse(payload: JsonValue, status: number, headers: HeadersInit):
 
 async function readJsonBody(request: Request): Promise<BodyResult> {
   try {
-    const text = await request.text()
+    const contentLength = request.headers.get("content-length")
 
-    if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+    if (contentLength && /^\d+$/.test(contentLength) && Number(contentLength) > MAX_BODY_BYTES) {
       return { ok: false, error: "JSON body is too large" }
     }
 
+    const reader = request.body?.getReader()
+
+    if (!reader) {
+      return { ok: false, error: "Invalid JSON body" }
+    }
+
+    const chunks: Uint8Array[] = []
+    let totalBytes = 0
+
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        break
+      }
+
+      totalBytes += value.byteLength
+
+      if (totalBytes > MAX_BODY_BYTES) {
+        await reader.cancel().catch(() => undefined)
+        return { ok: false, error: "JSON body is too large" }
+      }
+
+      chunks.push(value)
+    }
+
+    const bytes = new Uint8Array(totalBytes)
+    let offset = 0
+
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+
+    const text = new TextDecoder().decode(bytes)
     const value = JSON.parse(text)
 
     if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -728,6 +806,10 @@ function statusFromRpcError(error: unknown): number {
 
   const code = "code" in error ? error.code : null
 
+  if (code === UPSTREAM_UNAVAILABLE_CODE) {
+    return 503
+  }
+
   if (code === "22023") {
     return 400
   }
@@ -752,5 +834,9 @@ function toPublicRpcError(error: unknown): { error: string } {
     ? error.message
     : "Gateway RPC failed"
 
-  return { error: message }
+  if ("code" in error && error.code === UPSTREAM_UNAVAILABLE_CODE) {
+    return { error: "Gateway service is unavailable" }
+  }
+
+  return { error: PUBLIC_RPC_MESSAGES.has(message) ? message : "Gateway RPC failed" }
 }

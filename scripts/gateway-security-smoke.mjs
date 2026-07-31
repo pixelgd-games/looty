@@ -20,6 +20,12 @@ const blocked = await post("create-session", {
 }, "https://not-looty.example")
 assert.equal(blocked.status, 403, "create-session must reject an unapproved origin")
 
+const missingOrigin = await post("create-session", {
+  slug: gameSlug,
+  currency: "POINT",
+}, null)
+assert.equal(missingOrigin.status, 403, "create-session must reject a missing origin")
+
 const unsupportedCurrency = await post("create-session", {
   slug: gameSlug,
   currency: "USD",
@@ -162,13 +168,18 @@ async function wallet(route, gatewayToken, roundId, amount, idempotencyKey) {
 }
 
 async function post(route, body, origin = gameOrigin, extraHeaders = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...extraHeaders,
+  }
+
+  if (origin) {
+    headers.Origin = origin
+  }
+
   const response = await fetch(`${gatewayUrl}/${route}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Origin: origin,
-      ...extraHeaders,
-    },
+    headers,
     body: JSON.stringify(body),
   })
 
