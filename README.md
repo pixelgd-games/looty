@@ -619,6 +619,12 @@ Smoke 目標：
 - 正式資產包含 iframe sandbox、權限、referrer policy、`LOOTY-GAME-006` 與 Lobby 封面 fallback。
 - `looty-gateway` v5 已 Active；不建立玩家、錢包或 session 的 security smoke 已通過。
 
+2026-07-31 Monster Lab 資料更新：
+
+- Game ID `176b81a4-a304-4f41-8c5e-37bebe371305` 已更新為 `Monster Lab` / `monster-lab`。
+- Loader 使用 `https://looty-git.pages.dev/game/?slug=monster-lab`，遊戲本體網址由 Looty 平台資料管理。
+- 本次只更新 Looty 平台資料，沒有修改 Monster Lab 遊戲本體。
+
 2026-07-11 Ocean Battle 上架確認：
 
 - `ocean-battle` 已以 `type = fish`、`supports_live = false`、`published = true` 上架。

@@ -114,8 +114,7 @@ Looty 一次性 launch code 要立即交換成 `gateway_token`。launch code 與
 - `color-guess`
 - `dead-county`
 - `lord-of-gomoku`
-- `monster-lab-dev`（現有遠端舊紀錄；Project-Gaming 的正式
-  canonical slug 是 `monster-lab`）
+- `monster-lab`
 - `ninja-four-elements`
 - `ocean-battle`
 - `speed-rush`
