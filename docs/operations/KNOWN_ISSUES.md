@@ -14,36 +14,35 @@
 
 - 現有正式產品架構可繼續使用，不需要重做。
 - Lobby、Game Loader、Admin、Gateway 與 DB 的責任分工大致正確。
-- 2026-07-23 `npm audit`、`npm run build` 與 `npm run smoke` 已通過；遠端 Supabase DB lint 先前已通過。
-- 2026-07-23 已確認 Looty linked true，本機與遠端 16 筆 migrations 全部同步。
+- 2026-07-31 `npm audit`、`npm run build`、`npm run smoke`、全專案 JavaScript 語法與 Gateway TypeScript 解析已通過。
+- 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，新幣別 migration 尚待使用者確認。
 - 以下問題目前不阻擋公開遊戲啟動主路徑。
 
 ## 優先處理
 
 ### Gateway 防濫用
 
-狀態：待處理。
+狀態：本機程式已處理，遠端 Gateway 待部署。
 
-`supabase/functions/looty-gateway/index.ts` 目前允許沒有 `Origin` 的請求。瀏覽器 CORS 白名單有效，但外部腳本仍可直接呼叫 `create-session`，持續建立 Guest、wallet 與 session。
+`create-session` 現在會拒絕缺少 `Origin` 或來源不在白名單的請求。
 
-現有 IP rate limit 能降低速度，但不能完全阻止自動化濫用。
+這能擋掉一般無來源腳本，但 `Origin` 不是不可偽造的身份憑證；DB-backed IP rate limit 仍需保留。若正式營運後仍有濫用，再增加 CAPTCHA、裝置證明或邊緣防護，不要只靠 CORS。
 
 ### Loader 與 Gateway 逾時
 
-狀態：待處理。
+狀態：本機程式已處理，待前端與 Gateway 部署。
 
-- Game Loader 只等待 iframe `load`，遊戲無回應時 Loading 可能一直顯示。
-- Gateway 呼叫 Supabase Auth / REST RPC 時沒有明確逾時。
-
-未來處理時應分開設定遊戲載入逾時與後端請求逾時，不要共用一個不合理的時間。
+- Game Loader 等待 iframe `load` 最長 30 秒，逾時會移除 iframe 並顯示 `LOOTY-GAME-006`。
+- Gateway 的 Supabase Auth 逾時為 5 秒，REST RPC 逾時為 8 秒。
+- iframe 若成功載入外框後才在遊戲內卡住，平台無法只靠 `load` 判斷；要更精準需遊戲實作 ready handshake，屬於遊戲本體接入工作。
 
 ### iframe 信任邊界
 
-狀態：接入不完全可信任遊戲前處理。
+狀態：本機程式已處理，待前端部署。
 
-Game Loader 建立的 iframe 目前沒有 `sandbox` 或能力限制。現有遊戲多為不同網域，風險較低；但 Looty 也允許 `/` 開頭的同網域 `launch_url`，同網域遊戲可能接觸 Looty origin 的頁面與 storage。
+Game Loader 現在統一設定 `sandbox`、`allow`、`referrerPolicy=no-referrer` 與全螢幕權限，不開 modal、popup、下載或 top navigation。
 
-不要直接套用過度嚴格的 sandbox。應先確認遊戲需要的音訊、全螢幕、輸入、下載或其他能力，再建立平台規則。
+同網域遊戲不給 `allow-same-origin`，以 opaque origin 保護 Looty；跨網域遊戲保留 `allow-same-origin`，讓遊戲能使用自己的 storage。未來若遊戲需要新增 iframe 能力，先確認是遊戲必要需求，再調整平台白名單。
 
 ## 資料量增加後處理
 
@@ -70,6 +69,8 @@ Guest 保存期限與清理規則尚未定案。資料量明顯增加前，需�
 目前本機 smoke 主要驗證：
 
 - Lobby 可載入。
+- iframe sandbox、權限、同／跨網域隔離與載入逾時。
+- Lobby 無效縮圖會切回 placeholder。
 - Loader 缺少 slug 時顯示錯誤。
 - Admin Login 可載入。
 - 共用 Error Modal 可顯示。
@@ -93,9 +94,6 @@ Production Gateway security smoke 會建立正式 Demo 測試資料，不要在�
 
 ## 次要改善
 
-- Gateway 非預期 RPC 錯誤目前可能把原始 DB message 回傳給呼叫者。
-- Gateway 會先完整讀取 request body，再檢查 16 KiB 上限。
-- Lobby 無效縮圖目前可能顯示破圖，沒有自動切回 placeholder。
 - Error Modal 尚未做完整 focus trap 與關閉後焦點還原。
 - Admin 新增與編輯頁的欄位及 game type options 有重複維護。
 - 前台與錯誤介面的中英文尚未完全統一。
@@ -115,9 +113,24 @@ Production Gateway security smoke 會建立正式 Demo 測試資料，不要在�
 
 ### 開發依賴漏洞
 
-2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild。
+2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild；2026-07-31 再更新 PostCSS 與相關安全修正。
 
 `npm audit` 已是 0 vulnerabilities，build 與 smoke 已通過。專案維持 Vite 7，沒有為了追最新版升級到 Vite 8。
+
+### Demo wallet 幣別
+
+本機 Gateway 已限制 Demo wallet 只接受 `POINT`。小步 migration `20260731171000_restrict_demo_wallet_currency.sql` 會把新 wallet 預設餘額改為 0，只在建立 POINT wallet 時由 DB trigger 發放 10,000 POINT，並限制 Demo session 幣別必須是 POINT。
+
+此 migration 尚待使用者確認，遠端尚未套用。
+
+### Gateway 錯誤與 body limit
+
+Gateway 現在以串流限制 request body 16 KiB，Supabase 上游失敗回統一 `503`，非預期 DB 訊息不再直接回傳。
+
+### Lobby 與 Admin 小問題
+
+- Lobby 封面載入失敗會移除破圖並切回 placeholder。
+- Admin 新增／編輯模式改以頁面路徑決定；編輯網址缺少 `id` 時不再誤新增資料。
 
 ## 不列為問題
 

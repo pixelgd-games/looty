@@ -67,8 +67,8 @@ Looty 任務中不要直接修改遊戲本體。已上架遊戲目前只會從 L
 - Supabase Edge Function `looty-gateway` v4 已部署，支援一次性 launch code、`exchange` 與第一版 wallet endpoints。
 - Loader 只把兩分鐘有效、只能使用一次的 `looty_launch_code` 傳給 iframe；遊戲以它交換最長一小時的 `gateway_token`。
 - Gateway v1 已自行驗證 route、token、scope、session 與 rate limit，不把 Supabase anon key、JWT 或 service role key 傳給遊戲。
-- Wallet 目前明確是 `demo` mode；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
-- 2026-07-23 已更新前端與開發依賴，`npm audit`、`npm run build` 與 `npm run smoke` 通過。
+- Wallet 目前明確是 `demo` mode，只接受 `POINT`；正式金流仍要走可信任遊戲後端或外部 wallet adapter。
+- 2026-07-31 已更新 PostCSS 安全版本，`npm audit`、`npm run build` 與 `npm run smoke` 通過。
 - Looty 自管遊戲封面放在 `public/games/<slug>/cover.webp`，目前 `speed-rush`、`ocean-battle`、`color-guess`、`valkyrie-dragons-hoard`、`dead-county`、`ninja-four-elements`、`arrgh-hoops` 已使用。
 - Lobby 已有手機橫向版面：觸控低高度橫向裝置顯示 4 欄，PC 與手機直向維持原版面。
 - Looty Analytics v1.0 已完成規劃，尚未建立 Grafana、Reporting Views、Gateway health 或 Analytics event。
@@ -206,6 +206,9 @@ Loader UI 現況：
 - `#game` 用 sticky 滿版承接遊戲畫面。
 - Loading overlay 可見時接住 `pan-y` 手勢，隱藏後才把觸控交回 iframe。
 - iframe 初次 load 後，overlay 會淡出再移除。
+- iframe 由 Looty Platform 設定 `sandbox`、`allow`、referrer policy 與全螢幕權限；不修改遊戲本體。
+- 同網域遊戲採 opaque origin 隔離；跨網域遊戲只為遊戲自己的儲存需求加入 `allow-same-origin`。
+- iframe 30 秒內沒有完成 `load` 時會移除，並顯示載入逾時錯誤。
 
 Game Loader 錯誤碼：
 
@@ -214,6 +217,7 @@ Game Loader 錯誤碼：
 - `LOOTY-GAME-003`: 遊戲啟動網址未設定
 - `LOOTY-GAME-004`: 遊戲資料讀取失敗
 - `LOOTY-GAME-005`: 遊戲啟動網址格式不支援
+- `LOOTY-GAME-006`: 遊戲 iframe 載入逾時
 
 ## Admin 現況
 
@@ -328,6 +332,10 @@ ORDER BY sort_order, created_at DESC;
 - `20260710143000_add_gateway_runtime_limits.sql`
 - `20260710210000_grant_demo_wallet_initial_credit.sql`
 
+本機已建立、遠端尚待使用者確認：
+
+- `20260731171000_restrict_demo_wallet_currency.sql`
+
 目前 public schema 包含：
 
 - `admin_users`
@@ -438,6 +446,13 @@ POST /functions/v1/looty-gateway/close-round
 - `gateway_token` 目前只代表 `demo` wallet；正式金流仍需要可信任遊戲後端或外部 wallet adapter。
 - 新建立的 Demo POINT 錢包會取得 10,000 POINT，並寫入一筆 `deposit` 流水；營運前可用另一個小步 migration 關閉並清理測試資料。
 
+2026-07-31 本機已完成、遠端尚未部署：
+
+- `create-session` 缺少 `Origin` 時回 `403`。
+- Demo wallet 只接受 `POINT`，其他幣別回 `400`。
+- Supabase Auth 與 RPC 分別使用 5 秒、8 秒逾時。
+- Request body 以串流限制 16 KiB，非預期 DB 訊息不直接回傳。
+
 ## 環境變數
 
 本機與 Cloudflare Pages 都需要：
@@ -535,13 +550,14 @@ Smoke 目標：
 - 先跑 `npm run build`。
 - 啟動本機 Vite。
 - 啟動 headless Chrome / Edge。
-- 驗首頁、Loader 缺 slug、Admin login、共用錯誤視窗。
+- 驗首頁、iframe sandbox / 權限 / 載入逾時、Lobby 破圖 fallback、Loader 缺 slug、Admin login、共用錯誤視窗。
 
-2026-07-23 已確認：
+2026-07-31 已確認：
 
 - `npm audit` 為 0 vulnerabilities。
 - `npm run build` 通過。
 - `npm run smoke` 通過。
+- 全專案 JavaScript 語法與 Gateway TypeScript 解析通過。
 - Gateway v1 security smoke 最後於 2026-07-10 確認通過，本次沒有重跑，避免建立新的正式 Demo 測試資料。
 
 若要指定 browser，用 `SMOKE_BROWSER_PATH`。

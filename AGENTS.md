@@ -66,6 +66,8 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 博弈相關產品不接 CrazyGames；不要替這類產品建立 CrazyGames Build、SDK、廣告或上架流程。
 - CrazyGames Build 不呼叫 Looty Gateway；Looty Build 不初始化 CrazyGames SDK 或載入 CrazyGames 廣告。
 - Looty launch code 與 gateway token 只留在記憶體，不寫入瀏覽器儲存、Log 或 Analytics。
+- iframe 外殼、`sandbox` / `allow` 權限、載入逾時與平台錯誤畫面由 Looty Platform 處理。
+- 遊戲能否被 iframe 載入、遊戲內畫面、資源載入、CSP / `X-Frame-Options` 與 sandbox 相容性由遊戲本體處理；在 Looty repo 只回報，不修改遊戲本體。
 - Lobby 遊戲封面統一使用 `3:4`、`750 x 1000` WebP。
 - 遊戲商提供原圖後，由 Looty AI 裁切、壓縮並放到 `public/games/<slug>/cover.webp`。
 - Lobby 封面屬於 Looty 平台素材，不要放進或修改遊戲本體 repo。
@@ -136,6 +138,7 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - Game Loader 進遊戲前會建立 session，並把 `looty_session_id`、`looty_launch_code`、`looty_game_id`、`looty_currency`、`looty_wallet_mode`、`looty_gateway_url`、`looty_exchange_url` 傳給 iframe。
 - 遊戲以兩分鐘有效、只能使用一次的 launch code 交換最長一小時的 `gateway_token`；Loader 不把 Supabase anon key、JWT 或 service role key 傳給 iframe。
 - Gateway v1 已自行驗證 route、token、scope、session 與 DB-backed rate limit；目前 wallet mode 是 `demo`，不代表正式金流。
+- Demo wallet 幣別只允許 `POINT`；其他幣別不得建立 Demo session 或取得初始點數。
 - Round 與 wallet transaction 已綁定 `game_session_id`，相同 `round_id` 可安全存在於不同 session。
 - 目前沒有修改任何已上架遊戲本體；舊遊戲可以先忽略 Looty session 參數。
 
@@ -160,3 +163,5 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 2026-07-23 已確認 Looty / `lsazydefvnuqglultqii` linked true，本機與遠端 16 筆 migrations 全部同步。
 - 2026-07-23 已建立 `docs/operations/ANALYTICS_MONITORING.md`，Analytics 與監控仍在規劃階段，尚未實作。
 - 2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild；`npm audit` 為 0 vulnerabilities，build 與 smoke 已通過。
+- 2026-07-31 本機已完成 PostCSS 安全更新、Demo POINT 幣別限制、Gateway 逾時與錯誤加固、iframe sandbox / 載入逾時、Lobby 破圖 fallback 與後台表單路由修正；`npm audit`、build、smoke 與全專案語法檢查通過。
+- 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，`20260731171000_restrict_demo_wallet_currency.sql` 尚待使用者確認後套用。遠端 `looty-gateway` 仍是 v4，尚未部署本機加固版本。

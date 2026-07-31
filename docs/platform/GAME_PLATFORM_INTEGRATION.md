@@ -155,6 +155,23 @@ Supabase Edge Function `looty-gateway` v4 已部署，負責建立 session、交
 - 透過 Looty Gateway 呼叫 wallet，不把 Supabase key 或 service role key 放進遊戲前端。
 - Loader 進遊戲前會呼叫 `looty-gateway/create-session`，再把一次性 launch code 與非敏感 session 參數帶給 iframe。
 
+### iframe 責任
+
+Looty Platform 負責：
+
+- 建立 iframe。
+- 設定 `sandbox`、`allow`、referrer policy 與全螢幕權限。
+- 同網域遊戲採較嚴格的 opaque origin 隔離；跨網域遊戲只為遊戲自己的儲存需求加入 `allow-same-origin`。
+- 30 秒內沒有完成 iframe `load` 時移除 iframe，顯示 `LOOTY-GAME-006`。
+
+Game 負責：
+
+- 入口允許被 iframe 載入。
+- 遊戲資源、畫面與啟動流程能正常完成。
+- CSP、`X-Frame-Options`、瀏覽器儲存與 sandbox 相容性。
+
+如果 iframe 外殼、平台權限或逾時畫面有問題，改 Looty repo。如果是遊戲拒絕嵌入、遊戲資源失敗、遊戲畫面卡住或不相容，必須切到該遊戲 repo 處理；不要在 Looty repo 修改遊戲本體。
+
 ## 給遊戲 AI 的最短規則
 
 如果你是在做一款要接 Looty 的遊戲，先遵守這些：
@@ -512,6 +529,7 @@ POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-
 
 - Supabase Function `verify_jwt` 為 `false`。
 - `create-session` 只接受 Looty production / localhost origin，並可驗證傳入的 Supabase user token；沒有 user token 時建立 Guest。
+- `create-session` 缺少 `Origin` 或來源不在白名單時回 `403`。
 - Supabase client 自動附加的同值 `apikey` / Bearer token 視為 Guest；只有不同於 `apikey` 的 Bearer token 才當作會員 session 驗證。
 - 外部遊戲不需要 Supabase key 或 Authorization header。
 - Function 內部才使用 service role 呼叫 DB RPC。
@@ -574,6 +592,9 @@ Wallet endpoint 共通要求：
 - `metadata` 可選，但必須是 object。
 - service role key 只存在 Edge Function 環境，不進遊戲前端。
 - Request body 上限 16 KiB；各 route 有 DB-backed IP rate limit。
+- Request body 以串流方式限制在 16 KiB，不先完整讀入記憶體。
+- Supabase Auth 逾時為 5 秒、RPC 逾時為 8 秒；上游逾時或網路錯誤回 `503`。
+- 非預期 DB 訊息不直接回傳給呼叫者。
 
 目前授權狀態：
 
@@ -581,6 +602,7 @@ Wallet endpoint 共通要求：
 - 遊戲交換後可直接用 `gateway_token` 呼叫 Gateway v1，不需要任何 Supabase key。
 - `gateway_token` 只放執行中記憶體，重新整理時由 Loader 建立新 session。
 - 目前 `wallet_mode = demo`；正式金流仍需可信任遊戲後端或外部 wallet adapter，不能把瀏覽器派彩當作正式裁決。
+- Demo wallet 只接受 `POINT`；其他幣別的 `create-session` 回 `400`。
 
 `balance` body：
 
@@ -830,9 +852,15 @@ Looty Platform
 - `20260710143000_add_gateway_runtime_limits.sql`
 - `20260710210000_grant_demo_wallet_initial_credit.sql`
 
+本機已建立、遠端尚待使用者確認：
+
+- `20260731171000_restrict_demo_wallet_currency.sql`
+
 已部署 Edge Function：
 
 - `looty-gateway` v4，`verify_jwt=false`，由 Gateway 自行驗證。
+
+本機已完成 Gateway 加固版本，遠端仍是 v4，待幣別 migration 確認後一併部署。
 
 注意：
 
