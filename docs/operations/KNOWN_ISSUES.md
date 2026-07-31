@@ -14,7 +14,7 @@
 
 - 現有正式產品架構可繼續使用，不需要重做。
 - Lobby、Game Loader、Admin、Gateway 與 DB 的責任分工大致正確。
-- 2026-07-31 `npm audit`、`npm run build`、`npm run smoke`、全專案 JavaScript 語法與 Gateway TypeScript 解析已通過。
+- 2026-07-31 `npm audit`、`npm run build`、`npm run smoke`、`npm run test:gateway`、全專案 JavaScript 語法與 Gateway TypeScript 解析已通過。
 - 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，新幣別 migration 尚待使用者確認。
 - 以下問題目前不阻擋公開遊戲啟動主路徑。
 
@@ -80,7 +80,7 @@ Guest 保存期限與清理規則尚未定案。資料量明顯增加前，需�
 - Loader 成功建立 session 並載入遊戲。
 - Admin 新增、編輯、刪除與排序。
 - URL helper 與 Admin 表單驗證。
-- Gateway 純函式與錯誤轉換。
+- Gateway 其他 request validation 與錯誤轉換。
 
 Production Gateway security smoke 會建立正式 Demo 測試資料，不要在一般檢查中自動執行。
 
@@ -126,6 +126,8 @@ Production Gateway security smoke 會建立正式 Demo 測試資料，不要在�
 ### Gateway 錯誤與 body limit
 
 Gateway 現在以串流限制 request body 16 KiB，Supabase 上游失敗回統一 `503`，非預期 DB 訊息不再直接回傳。
+
+本機 `test:gateway` 會模擬 Auth / RPC 已回標頭但 response body 讀取失敗，確認兩者都回 `503`；不連遠端、不建立資料。`create-session` 的 `display_name` 最長 120 字。
 
 ### Lobby 與 Admin 小問題
 

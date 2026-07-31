@@ -32,6 +32,13 @@ const unsupportedCurrency = await post("create-session", {
 }, lootyOrigin)
 assert.equal(unsupportedCurrency.status, 400, "demo wallet must reject unsupported currency")
 
+const oversizedDisplayName = await post("create-session", {
+  slug: gameSlug,
+  currency: "POINT",
+  display_name: "x".repeat(121),
+}, lootyOrigin)
+assert.equal(oversizedDisplayName.status, 400, "create-session must reject an oversized display name")
+
 if (anonKey) {
   const anonymousClient = await post("create-session", {
     slug: gameSlug,

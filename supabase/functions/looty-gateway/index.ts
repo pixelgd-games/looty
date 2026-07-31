@@ -240,7 +240,7 @@ async function createSession(request: Request, headers: HeadersInit): Promise<Re
   const slug = typeof body.value.slug === "string" ? body.value.slug.trim() : ""
   const currency = typeof body.value.currency === "string" ? body.value.currency.trim().toUpperCase() : "POINT"
   const expiresInSeconds = normalizeInteger(body.value.expires_in_seconds, 3600)
-  const displayName = typeof body.value.display_name === "string" ? body.value.display_name.trim() : null
+  const displayName = typeof body.value.display_name === "string" ? body.value.display_name.trim() : ""
 
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) {
     return jsonResponse({ error: "Invalid game slug" }, 400, headers)
@@ -256,6 +256,10 @@ async function createSession(request: Request, headers: HeadersInit): Promise<Re
 
   if (expiresInSeconds < 60 || expiresInSeconds > 86400) {
     return jsonResponse({ error: "Invalid session expiry" }, 400, headers)
+  }
+
+  if (displayName.length > 120) {
+    return jsonResponse({ error: "Display name is too long" }, 400, headers)
   }
 
   const rpcResult = await callRpc("create_game_session", {
@@ -483,7 +487,7 @@ async function closeRound(request: Request, headers: HeadersInit): Promise<Respo
   }, 200, headers)
 }
 
-async function resolveAuthUser(request: Request): Promise<AuthResult> {
+export async function resolveAuthUser(request: Request): Promise<AuthResult> {
   const authorization = request.headers.get("authorization")?.trim() ?? ""
   const apiKey = request.headers.get("apikey")?.trim() ?? ""
 
@@ -507,34 +511,32 @@ async function resolveAuthUser(request: Request): Promise<AuthResult> {
     return { ok: false, error: "Gateway authentication is not configured", status: 500 }
   }
 
-  let response: Response
-
   try {
-    response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: {
         apikey: ANON_KEY,
         Authorization: `Bearer ${token}`,
       },
       signal: AbortSignal.timeout(AUTH_REQUEST_TIMEOUT_MS),
     })
+
+    if (!response.ok) {
+      return { ok: false, error: "User session is not valid", status: 401 }
+    }
+
+    const user = await response.json()
+    const userId = user && typeof user === "object" && "id" in user && typeof user.id === "string"
+      ? user.id
+      : ""
+
+    if (!userId) {
+      return { ok: false, error: "User session is not valid", status: 401 }
+    }
+
+    return { ok: true, userId }
   } catch {
     return { ok: false, error: "Gateway authentication is unavailable", status: 503 }
   }
-
-  if (!response.ok) {
-    return { ok: false, error: "User session is not valid", status: 401 }
-  }
-
-  const user = await readResponseJson(response)
-  const userId = user && typeof user === "object" && "id" in user && typeof user.id === "string"
-    ? user.id
-    : ""
-
-  if (!userId) {
-    return { ok: false, error: "User session is not valid", status: 401 }
-  }
-
-  return { ok: true, userId }
 }
 
 async function enforceRateLimit(
@@ -569,7 +571,7 @@ async function enforceRateLimit(
   return null
 }
 
-async function callRpc(name: string, args: Record<string, unknown>): Promise<RpcResult> {
+export async function callRpc(name: string, args: Record<string, unknown>): Promise<RpcResult> {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return {
       ok: false,
@@ -577,10 +579,8 @@ async function callRpc(name: string, args: Record<string, unknown>): Promise<Rpc
     }
   }
 
-  let response: Response
-
   try {
-    response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
       method: "POST",
       headers: {
         apikey: SERVICE_ROLE_KEY,
@@ -590,6 +590,11 @@ async function callRpc(name: string, args: Record<string, unknown>): Promise<Rpc
       body: JSON.stringify(args),
       signal: AbortSignal.timeout(RPC_REQUEST_TIMEOUT_MS),
     })
+
+    return {
+      ok: response.ok,
+      body: await response.json(),
+    }
   } catch {
     return {
       ok: false,
@@ -598,11 +603,6 @@ async function callRpc(name: string, args: Record<string, unknown>): Promise<Rpc
         message: "Gateway upstream request failed",
       },
     }
-  }
-
-  return {
-    ok: response.ok,
-    body: await readResponseJson(response),
   }
 }
 
@@ -724,14 +724,6 @@ async function readJsonBody(request: Request): Promise<BodyResult> {
     return { ok: true, value: value as Record<string, unknown> }
   } catch {
     return { ok: false, error: "Invalid JSON body" }
-  }
-}
-
-async function readResponseJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json()
-  } catch {
-    return null
   }
 }
 

@@ -530,6 +530,7 @@ POST https://lsazydefvnuqglultqii.supabase.co/functions/v1/looty-gateway/create-
 - Supabase Function `verify_jwt` 為 `false`。
 - `create-session` 只接受 Looty production / localhost origin，並可驗證傳入的 Supabase user token；沒有 user token 時建立 Guest。
 - `create-session` 缺少 `Origin` 或來源不在白名單時回 `403`。
+- `display_name` 可省略，最長 120 字。
 - Supabase client 自動附加的同值 `apikey` / Bearer token 視為 Guest；只有不同於 `apikey` 的 Bearer token 才當作會員 session 驗證。
 - 外部遊戲不需要 Supabase key 或 Authorization header。
 - Function 內部才使用 service role 呼叫 DB RPC。

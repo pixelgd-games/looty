@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "smoke": "node scripts/smoke-check.mjs",
+    "test:gateway": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/gateway-unit-check.mjs",
     "smoke:gateway": "node scripts/gateway-security-smoke.mjs"
   },
   "devDependencies": {

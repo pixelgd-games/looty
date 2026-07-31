@@ -521,6 +521,7 @@ https://mcp.supabase.com/mcp?project_ref=lsazydefvnuqglultqii&read_only=true
 npm install
 npm run dev
 npm run build
+npm run test:gateway
 ```
 
 注意：
@@ -551,12 +552,14 @@ Smoke 目標：
 - 啟動本機 Vite。
 - 啟動 headless Chrome / Edge。
 - 驗首頁、iframe sandbox / 權限 / 載入逾時、Lobby 破圖 fallback、Loader 缺 slug、Admin login、共用錯誤視窗。
+- `npm run test:gateway` 以本機模擬驗證 Auth / RPC 回應內容逾時會轉成 `503`，不連遠端、不建立資料。
 
 2026-07-31 已確認：
 
 - `npm audit` 為 0 vulnerabilities。
 - `npm run build` 通過。
 - `npm run smoke` 通過。
+- `npm run test:gateway` 通過。
 - 全專案 JavaScript 語法與 Gateway TypeScript 解析通過。
 - Gateway v1 security smoke 最後於 2026-07-10 確認通過，本次沒有重跑，避免建立新的正式 Demo 測試資料。
 

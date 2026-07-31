@@ -163,5 +163,5 @@ CrazyGames Client、Build、SDK、廣告或上架素材。除非使用者明確�
 - 2026-07-23 已確認 Looty / `lsazydefvnuqglultqii` linked true，本機與遠端 16 筆 migrations 全部同步。
 - 2026-07-23 已建立 `docs/operations/ANALYTICS_MONITORING.md`，Analytics 與監控仍在規劃階段，尚未實作。
 - 2026-07-23 已更新 `@supabase/supabase-js`、Vite、ws 與 esbuild；`npm audit` 為 0 vulnerabilities，build 與 smoke 已通過。
-- 2026-07-31 本機已完成 PostCSS 安全更新、Demo POINT 幣別限制、Gateway 逾時與錯誤加固、iframe sandbox / 載入逾時、Lobby 破圖 fallback 與後台表單路由修正；`npm audit`、build、smoke 與全專案語法檢查通過。
+- 2026-07-31 本機已完成 PostCSS 安全更新、Demo POINT 幣別限制、Gateway 逾時與錯誤加固、iframe sandbox / 載入逾時、Lobby 破圖 fallback 與後台表單路由修正；`npm audit`、build、smoke、Gateway unit check 與全專案語法檢查通過。
 - 2026-07-31 已確認 Looty linked true；本機有 17 筆 migration、遠端有 16 筆，`20260731171000_restrict_demo_wallet_currency.sql` 尚待使用者確認後套用。遠端 `looty-gateway` 仍是 v4，尚未部署本機加固版本。
